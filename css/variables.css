@@ -1,0 +1,130 @@
+/* ============================================================
+   DerejFact Admin — Design Tokens
+   Dark mode por defecto. Light mode con data-theme="light"
+   ============================================================ */
+
+:root {
+  /* ── Colores primarios ─────────────────────────────────── */
+  --primary:         #004e98;
+  --primary-dark:    #003a72;
+  --primary-light:   #1a6cb5;
+  --primary-glow:    rgba(0, 78, 152, 0.35);
+  --primary-subtle:  rgba(0, 78, 152, 0.12);
+
+  /* ── Verde fiscal (e-CF / DGII) ────────────────────────── */
+  --accent:          #00a651;
+  --accent-dark:     #008040;
+  --accent-subtle:   rgba(0, 166, 81, 0.12);
+
+  /* ── Estados ──────────────────────────────────────────── */
+  --danger:          #f44336;
+  --danger-dark:     #c62828;
+  --danger-subtle:   rgba(244, 67, 54, 0.12);
+  --warning:         #f59e0b;
+  --warning-dark:    #b45309;
+  --warning-subtle:  rgba(245, 158, 11, 0.12);
+  --info:            #0288d1;
+  --info-subtle:     rgba(2, 136, 209, 0.12);
+
+  /* ── Fondo y superficies (DARK MODE — default) ────────── */
+  --bg:              #0d1117;
+  --bg-secondary:    #161b22;
+  --surface:         #1c2333;
+  --surface-2:       #222d42;
+  --surface-hover:   #263045;
+  --border:          #30363d;
+  --border-subtle:   #21262d;
+
+  /* ── Texto (DARK MODE) ────────────────────────────────── */
+  --text:            #e6edf3;
+  --text-muted:      #8b949e;
+  --text-disabled:   #484f58;
+
+  /* ── Sidebar (DARK MODE) ──────────────────────────────── */
+  --sidebar-bg:           #010409;
+  --sidebar-border:       #21262d;
+  --sidebar-item-hover:   #1c2333;
+  --sidebar-item-active:  #1a3a5c;
+  --sidebar-text:         #8b949e;
+  --sidebar-text-active:  #e6edf3;
+  --sidebar-icon-active:  #004e98;
+  --sidebar-width:        260px;
+  --topbar-height:        60px;
+
+  /* ── Tipografía ───────────────────────────────────────── */
+  --font:       'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* ── Sombras ──────────────────────────────────────────── */
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow:      0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:   0 10px 30px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 24px rgba(0, 78, 152, 0.4);
+
+  /* ── Bordes redondeados ───────────────────────────────── */
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ── Transiciones ─────────────────────────────────────── */
+  --transition:      0.18s ease;
+  --transition-slow: 0.35s ease;
+
+  /* ── Z-index ──────────────────────────────────────────── */
+  --z-sidebar: 100;
+  --z-topbar:  90;
+  --z-modal:   200;
+  --z-toast:   300;
+}
+
+/* ── Light mode (activado con data-theme="light") ────────── */
+[data-theme="light"] {
+  --bg:             #f4f6fa;
+  --bg-secondary:   #eef0f5;
+  --surface:        #ffffff;
+  --surface-2:      #f8f9fd;
+  --surface-hover:  #f0f3fa;
+  --border:         #e2e8f0;
+  --border-subtle:  #eef2f7;
+  --text:           #1a2332;
+  --text-muted:     #64748b;
+  --text-disabled:  #cbd5e0;
+
+  --sidebar-bg:           #002d5a;
+  --sidebar-border:       #003a72;
+  --sidebar-item-hover:   #003a72;
+  --sidebar-item-active:  #004e98;
+  --sidebar-text:         #93c5fd;
+  --sidebar-text-active:  #ffffff;
+  --sidebar-icon-active:  #60b4ff;
+
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow:      0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg:   0 10px 30px rgba(0, 0, 0, 0.14);
+  --shadow-glow: 0 0 24px rgba(0, 78, 152, 0.2);
+}
+
+/* ── Reset base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; }
+
+body {
+  font-family: var(--font);
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--primary-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+svg { display: block; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-disabled); }

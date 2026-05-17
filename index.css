@@ -1,0 +1,179 @@
+/* ============================================================
+   DerejFact Admin — Login Styles
+   ============================================================ */
+
+body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.login-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('public/background.jpg') center/cover no-repeat;
+    background-color: var(--bg); /* Fallback */
+}
+
+/* Overlay gradient para oscurecer el fondo y darle tono azul */
+.login-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 45, 90, 0.9) 0%, rgba(13, 17, 23, 0.85) 100%);
+    z-index: 1;
+}
+
+.login-card {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 32px;
+    background: rgba(22, 27, 34, 0.7); /* Dark surface with transparency for glassmorphism */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-lg), 0 0 40px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-xl);
+    animation: slideUpFade 0.6s ease-out forwards;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.login-logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px var(--primary-glow);
+}
+
+.login-logo svg {
+    width: 32px;
+    height: 32px;
+    color: #fff;
+}
+
+.login-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper .form-input {
+    padding-right: 44px;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition), background var(--transition);
+}
+
+.btn-toggle-password:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.btn-toggle-password svg {
+    width: 20px;
+    height: 20px;
+}
+
+.form-actions {
+    margin-top: 12px;
+}
+
+.btn-submit {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 1rem;
+    height: 46px;
+    position: relative;
+}
+
+.login-footer {
+    margin-top: 24px;
+    text-align: center;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 16px;
+}
+
+/* Spinner Inline */
+.spinner-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Redefinir la vista clara de los inputs para contrastar bien en el dark bg transparente */
+.login-card .form-input {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+.login-card .form-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+.login-card .form-label {
+    color: #e6edf3;
+}
+
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

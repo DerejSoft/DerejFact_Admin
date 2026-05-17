@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes - DerejFact Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/layout.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-wrapper">
+            <header class="topbar" id="topbar"></header>
+            <main class="main-content" id="mainContent">
+                
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Planes</h1>
+                        <p class="page-subtitle">Configuración de planes y límites de facturación</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnNew">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Nuevo Plan
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar plan por nombre...">
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-header-bar">
+                        <h3 class="table-title">Listado de Planes <span class="table-count" id="tableCount">(0)</span></h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Nombre</th>
+                                    <th>Comprobantes / Mes</th>
+                                    <th>Precios (Mensual / Anual)</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- Contenido dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal-overlay" id="modalForm">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Nuevo Plan</h3>
+                <button class="modal-close" id="btnCloseModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataForm" class="form-grid">
+                    <input type="hidden" id="entityId">
+                    
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="nombre">Nombre del Plan <span class="required">*</span></label>
+                            <input type="text" id="nombre" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="orden">Orden <span class="required">*</span></label>
+                            <input type="number" id="orden" class="form-input" required min="1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="descripcion">Descripción</label>
+                        <textarea id="descripcion" class="form-textarea" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="limite_comprobantes">Límite Comprobantes <span class="required">*</span></label>
+                            <input type="number" id="limite_comprobantes" class="form-input" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="ciclo_disponible">Ciclo de Cobro <span class="required">*</span></label>
+                            <select id="ciclo_disponible" class="form-select" required>
+                                <option value="AMBOS">Ambos (Mensual y Anual)</option>
+                                <option value="MENSUAL">Solo Mensual</option>
+                                <option value="ANUAL">Solo Anual</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="precio_mensual">Precio Mensual (DOP) <span class="required">*</span></label>
+                            <input type="number" id="precio_mensual" class="form-input" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="precio_anual">Precio Anual (DOP) <span class="required">*</span></label>
+                            <input type="number" id="precio_anual" class="form-input" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="dias_gracia">Días de Gracia</label>
+                        <input type="number" id="dias_gracia" class="form-input" min="0" value="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="tipos_ecf_input">Tipos de e-CF Permitidos (IDs separados por coma)</label>
+                        <input type="text" id="tipos_ecf_input" class="form-input" placeholder="Ej. 31, 32, 41">
+                        <span class="form-hint">31: Crédito, 32: Consumo, 41: Compras, etc.</span>
+                    </div>
+
+                    <label class="form-check" style="margin-top: 10px;">
+                        <input type="checkbox" id="activo" checked>
+                        <span class="form-check-label">Plan Activo</span>
+                    </label>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="btnCancelModal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSaveModal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/pages/planes.js"></script>
+</body>
+</html>

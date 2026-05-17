@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suscripciones - DerejFact Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/layout.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-wrapper">
+            <header class="topbar" id="topbar"></header>
+            <main class="main-content" id="mainContent">
+                
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Suscripciones</h1>
+                        <p class="page-subtitle">Gestión de suscripciones de las empresas</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnNew">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Nueva Suscripción
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por nombre de empresa...">
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-header-bar">
+                        <h3 class="table-title">Listado de Suscripciones <span class="table-count" id="tableCount">(0)</span></h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>Plan</th>
+                                    <th>Ciclo</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Fecha Renovación</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- Contenido dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal-overlay" id="modalForm">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Nueva Suscripción</h3>
+                <button class="modal-close" id="btnCloseModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataForm" class="form-grid">
+                    <input type="hidden" id="entityId">
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="empresa">Empresa <span class="required">*</span></label>
+                        <select id="empresa" class="form-select" required>
+                            <option value="">Seleccione una empresa...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="plan">Plan <span class="required">*</span></label>
+                            <select id="plan" class="form-select" required>
+                                <option value="">Seleccione un plan...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="ciclo">Ciclo de Facturación <span class="required">*</span></label>
+                            <select id="ciclo" class="form-select" required>
+                                <option value="MENSUAL">Mensual</option>
+                                <option value="ANUAL">Anual</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="fecha_inicio">Fecha de Inicio <span class="required">*</span></label>
+                            <input type="date" id="fecha_inicio" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fecha_renovacion">Fecha de Renovación <span class="required">*</span></label>
+                            <input type="date" id="fecha_renovacion" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="precio_pagado">Precio Pagado (DOP) <span class="required">*</span></label>
+                            <input type="number" id="precio_pagado" class="form-input" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="estado">Estado <span class="required">*</span></label>
+                            <select id="estado" class="form-select" required>
+                                <option value="ACTIVA">Activa</option>
+                                <option value="VENCIDA">Vencida</option>
+                                <option value="CANCELADA">Cancelada</option>
+                                <option value="SUSPENDIDA">Suspendida</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="btnCancelModal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSaveModal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/pages/suscripciones.js"></script>
+</body>
+</html>

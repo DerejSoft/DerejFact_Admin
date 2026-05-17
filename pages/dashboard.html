@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - DerejFact Admin</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    
+    <!-- Dependencias externas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Core JS -->
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/layout.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar se inyecta por JS -->
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <div class="main-wrapper">
+            <!-- Topbar se inyecta por JS -->
+            <header class="topbar" id="topbar"></header>
+
+            <!-- Main Content -->
+            <main class="main-content" id="mainContent">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Panel General</h1>
+                        <p class="page-subtitle">Métricas y estado general del sistema</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnRefresh">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Actualizar Datos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <!-- Nuevas Métricas Globales -->
+                    <div class="kpi-card" style="border-bottom: 2px solid var(--info);">
+                        <div class="kpi-icon info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Latencia Prom. API</span>
+                            <span class="kpi-value"><span id="kpiLatencia">124</span><span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;"> ms</span></span>
+                        </div>
+                    </div>
+                    <div class="kpi-card" style="border-bottom: 2px solid var(--primary);">
+                        <div class="kpi-icon blue"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Aceptación DGII</span>
+                            <span class="kpi-value"><span id="kpiAceptacion">98.5</span><span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;"> %</span></span>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 600;"><span id="kpiDgiiAceptados" style="color: var(--green);">12.5k Acept.</span> / <span id="kpiDgiiRechazados" style="color: var(--danger);">45 Err.</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Métricas Estándar -->
+                    <div class="kpi-card">
+                        <div class="kpi-icon blue"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 21h18M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Empresas Activas</span>
+                            <span class="kpi-value" id="kpiEmpresas">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon blue"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Usuarios</span>
+                            <span class="kpi-value" id="kpiUsuarios">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon green"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Planes Activos</span>
+                            <span class="kpi-value" id="kpiPlanes">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon green"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Suscrip. Activas</span>
+                            <span class="kpi-value" id="kpiSuscripciones">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Paquetes Activos</span>
+                            <span class="kpi-value" id="kpiPaquetes">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon info"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">API Keys Activas</span>
+                            <span class="kpi-value" id="kpiApiKeys">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon yellow"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Pagos Pendientes</span>
+                            <span class="kpi-value" id="kpiPagos">--</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon red"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Sec. Bloqueados</span>
+                            <span class="kpi-value" id="kpiSecuenciales">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <!-- Chart 1 -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">Estado de Empresas</h3>
+                        <div class="chart-container">
+                            <canvas id="chartEmpresas"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 2 -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">Suscripciones por Plan</h3>
+                        <div class="chart-container">
+                            <canvas id="chartPlanes"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 3 -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">Métodos de Pago</h3>
+                        <div class="chart-container">
+                            <canvas id="chartPagos"></canvas>
+                        </div>
+                    </div>
+                    <!-- Chart 4 -->
+                    <div class="chart-card">
+                        <h3 class="chart-title">Estado API Keys</h3>
+                        <div class="chart-container">
+                            <canvas id="chartApiKeys"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tablas de Actividad Reciente -->
+                <div class="charts-grid" style="grid-template-columns: 1.5fr 1fr;">
+                    <div class="table-wrapper">
+                        <div class="table-header-bar">
+                            <h3 class="table-title">Últimas Empresas Registradas</h3>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>RNC</th>
+                                        <th>Razón Social</th>
+                                        <th>Ambiente</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableEmpresasBody">
+                                    <!-- Dinámico -->
+                                    <tr><td colspan="4" class="text-center" style="padding: 30px;"><div class="spinner-wrapper" style="padding: 0;"><div class="spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <div class="table-header-bar">
+                            <h3 class="table-title">Pagos Recientes</h3>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Monto</th>
+                                        <th>Método</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablePagosBody">
+                                    <!-- Dinámico -->
+                                    <tr><td colspan="3" class="text-center" style="padding: 30px;"><div class="spinner-wrapper" style="padding: 0;"><div class="spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertas DGII -->
+                <div class="charts-grid" style="margin-top: 24px; grid-template-columns: 1fr;">
+                    <div class="table-wrapper" style="border: 1px solid var(--danger);">
+                        <div class="table-header-bar" style="background: rgba(220, 38, 38, 0.1); border-bottom: 1px solid rgba(220, 38, 38, 0.3);">
+                            <h3 class="table-title" style="color: var(--danger);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 18px; height: 18px; display: inline; vertical-align: text-bottom; margin-right: 4px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                Alertas DGII (Certificados y Secuenciales)
+                            </h3>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de Alerta</th>
+                                        <th>Empresa</th>
+                                        <th>Detalle / Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableAlertasDGIIBody">
+                                    <tr><td colspan="3" class="text-center" style="padding: 30px;"><div class="spinner-wrapper" style="padding: 0;"><div class="spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Script de la página -->
+    <script src="../js/pages/dashboard.js"></script>
+</body>
+</html>

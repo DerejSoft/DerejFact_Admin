@@ -6,7 +6,7 @@ const CONFIG = {
   // ─── URL BASE DE LA API ────────────────────────────────────────────────────
   // API_BASE_URL: 'http://127.0.0.1:8000/api/v1',
   // Producción → descomentar la línea de abajo y comentar la de arriba:
-  API_BASE_URL: 'https://samboxderejfact.derejfsoft.com/api/v1',
+  API_BASE_URL: 'http://samboxderejfact.derejsoft.com/api/v1',
 
   APP_NAME: 'DerejFact Admin',
   APP_VERSION: '1.0.0',

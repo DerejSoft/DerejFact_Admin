@@ -6,7 +6,7 @@ const CONFIG = {
   // ─── URL BASE DE LA API ────────────────────────────────────────────────────
   // API_BASE_URL: 'http://127.0.0.1:8000/api/v1',
   // Producción → descomentar la línea de abajo y comentar la de arriba:
-  API_BASE_URL: 'http://samboxderejfact.derejsoft.com/api/v1',
+  API_BASE_URL: 'https://samboxderejfact.derejsoft.com/api/v1',
 
   APP_NAME: 'DerejFact Admin',
   APP_VERSION: '1.0.0',
@@ -20,15 +20,15 @@ const CONFIG = {
 
   // ─── RUTAS INTERNAS DE LA APP ─────────────────────────────────────────────
   ROUTES: {
-    LOGIN:         '/index.html',
-    DASHBOARD:     '/pages/dashboard.html',
-    EMPRESAS:      '/pages/empresas.html',
-    USUARIOS:      '/pages/usuarios.html',
-    PLANES:        '/pages/planes.html',
-    SUSCRIPCIONES: '/pages/suscripciones.html',
-    PAQUETES:      '/pages/paquetes.html',
-    API_KEYS:      '/pages/api-keys.html',
-    SECUENCIALES:  '/pages/secuenciales.html',
-    PAGOS:         '/pages/pagos.html',
+    LOGIN:         './index.html',
+    DASHBOARD:     './pages/dashboard.html',
+    EMPRESAS:      './pages/empresas.html',
+    USUARIOS:      './pages/usuarios.html',
+    PLANES:        './pages/planes.html',
+    SUSCRIPCIONES: './pages/suscripciones.html',
+    PAQUETES:      './pages/paquetes.html',
+    API_KEYS:      './pages/api-keys.html',
+    SECUENCIALES:  './pages/secuenciales.html',
+    PAGOS:         './pages/pagos.html',
   },
 };

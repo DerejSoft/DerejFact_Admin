@@ -111,6 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GUARDAR (Crear / Editar) ---
     btnSaveModal.addEventListener('click', async () => {
+        const rncInput = document.getElementById('rnc');
+        rncInput.value = rncInput.value.replace(/\D/g, ''); // Limpiar en caso de copy-paste
+        const rncValue = rncInput.value.trim();
+
+        if (rncValue.length !== 9 && rncValue.length !== 11) {
+            showToast('Validación RNC', 'El RNC debe tener exactamente 9 dígitos (Persona Jurídica) u 11 dígitos (Persona Física).', 'warning');
+            rncInput.focus();
+            return;
+        }
+
         if (!dataForm.checkValidity()) {
             dataForm.reportValidity();
             return;
@@ -151,6 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNew.addEventListener('click', () => openModal());
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
+
+    // Limpieza de RNC en tiempo real
+    const rncInput = document.getElementById('rnc');
+    if (rncInput) {
+        rncInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
     
     // Iniciar
     loadData();

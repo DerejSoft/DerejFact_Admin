@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function openModal(entity = null) {
         dataForm.reset();
         document.getElementById('entityId').value = '';
+        const groupPrecio = document.getElementById('group_precio_pagado');
         
         if (entity) {
             modalTitle.textContent = 'Editar Suscripción';
@@ -135,9 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Empresa is usually readonly on edit
             document.getElementById('empresa').disabled = true;
+            if (groupPrecio) groupPrecio.style.display = 'block';
         } else {
             modalTitle.textContent = 'Nueva Suscripción';
             document.getElementById('empresa').disabled = false;
+            if (groupPrecio) groupPrecio.style.display = 'none';
+            document.getElementById('precio_pagado').value = 0;
             
             // Default dates
             const today = new Date();
@@ -201,6 +205,70 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNew.addEventListener('click', () => openModal());
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
+
+    // Escuchar selección de empresa para precarga inteligente
+    if (empresaSelect) {
+        empresaSelect.addEventListener('change', (e) => {
+            const empId = e.target.value;
+            const isNew = !document.getElementById('entityId').value;
+            
+            if (isNew && empId) {
+                // Buscar si ya tiene una suscripción existente
+                const existingSub = allData.find(s => s.empresa == empId);
+                if (existingSub) {
+                    showToast('Información', 'Se precargaron los datos de la última suscripción de la empresa', 'info');
+                    
+                    document.getElementById('plan').value = existingSub.plan || '';
+                    document.getElementById('ciclo').value = existingSub.ciclo || 'MENSUAL';
+                    document.getElementById('estado').value = existingSub.estado || 'ACTIVA';
+                    
+                    // Nueva fecha inicio = anterior fecha renovación
+                    const oldRenovacion = existingSub.fecha_renovacion;
+                    if (oldRenovacion) {
+                        const startDate = new Date(oldRenovacion);
+                        // Asegurar el string YYYY-MM-DD sin problemas de zona horaria
+                        const startStr = startDate.toISOString().split('T')[0];
+                        document.getElementById('fecha_inicio').value = startStr;
+                        
+                        // Recalcular renovación
+                        recalculateRenewalDate();
+                    }
+                }
+            }
+        });
+    }
+
+    // Función auxiliar para recalcular fecha de renovación basada en ciclo (mes/año)
+    function recalculateRenewalDate() {
+        const startVal = document.getElementById('fecha_inicio').value;
+        const cycle = document.getElementById('ciclo').value;
+        const renewInput = document.getElementById('fecha_renovacion');
+        
+        if (startVal && renewInput) {
+            // Usar formato ISO local añadiendo T00:00:00 para evitar que desfase por zona horaria
+            const startDate = new Date(startVal + 'T00:00:00');
+            const endDate = new Date(startDate);
+            
+            if (cycle === 'ANUAL') {
+                endDate.setFullYear(endDate.getFullYear() + 1);
+            } else {
+                endDate.setMonth(endDate.getMonth() + 1);
+            }
+            
+            renewInput.value = endDate.toISOString().split('T')[0];
+        }
+    }
+
+    // Escuchar cambios de ciclo y fecha de inicio para recalcular renovación
+    const cicloSelect = document.getElementById('ciclo');
+    if (cicloSelect) {
+        cicloSelect.addEventListener('change', recalculateRenewalDate);
+    }
+    
+    const fechaInicioInput = document.getElementById('fecha_inicio');
+    if (fechaInicioInput) {
+        fechaInicioInput.addEventListener('change', recalculateRenewalDate);
+    }
     
     // Iniciar
     loadData();

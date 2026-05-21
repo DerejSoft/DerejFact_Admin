@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     metodo_pago: targetPayment.metodo_pago,
                     referencia: targetPayment.referencia,
                     fecha_pago: targetPayment.fecha_pago.toISOString(),
+                    fecha_corte: new Date(targetPayment.fecha_pago).getDate(),
                     observaciones: 'Pago estándar autogenerado por ciclo de suscripción'
                 };
                 const res = await API.post('/pagos/', payload);
@@ -175,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         metodo_pago: sug.metodo_pago,
                         referencia: sug.referencia,
                         fecha_pago: sug.fecha_pago.toISOString(),
+                        fecha_corte: new Date(sug.fecha_pago).getDate(),
                         observaciones: 'Pago estándar autogenerado (actualización en cascada)'
                     };
                     const res = await API.post('/pagos/', payload);
@@ -459,6 +461,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('monto').value = parseFloat(price).toFixed(2);
                 }
             }
+
+            // Auto-llenar fecha_corte con el día de inicio de la suscripción
+            if (sub.fecha_inicio) {
+                const subStartDate = new Date(sub.fecha_inicio + 'T00:00:00');
+                if (!isNaN(subStartDate.getTime())) {
+                    document.getElementById('fecha_corte').value = subStartDate.getDate();
+                }
+            }
         }
     });
 
@@ -472,6 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const dateVal = document.getElementById('fecha_pago').value;
+        const defaultFechaCorte = dateVal ? new Date(dateVal).getDate() : new Date().getDate();
+
         const payload = {
             empresa: document.getElementById('empresa').value,
             suscripcion: document.getElementById('suscripcion').value || null,
@@ -480,8 +493,8 @@ document.addEventListener('DOMContentLoaded', () => {
             moneda: document.getElementById('moneda').value,
             metodo_pago: document.getElementById('metodo_pago').value,
             referencia: document.getElementById('referencia').value || null,
-            fecha_pago: new Date(document.getElementById('fecha_pago').value).toISOString(),
-            fecha_corte: document.getElementById('fecha_corte').value ? parseInt(document.getElementById('fecha_corte').value) : null,
+            fecha_pago: new Date(dateVal).toISOString(),
+            fecha_corte: document.getElementById('fecha_corte').value ? parseInt(document.getElementById('fecha_corte').value) : defaultFechaCorte,
             observaciones: document.getElementById('observaciones').value || null
         };
 

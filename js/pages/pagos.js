@@ -38,6 +38,157 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variables de estado para modal
     let currentPagoId = null;
     let currentAccion = null; // 'confirmar' o 'rechazar'
+    let suggestedPayments = [];
+
+    // --- CÁLCULO DE PAGOS SUGERIDOS PENDIENTES ---
+    function calculateSuggestedPayments() {
+        const suggested = [];
+        const now = new Date();
+
+        // Parser local de fecha para evitar desfases de zona horaria
+        const parseLocalDate = (dateStr) => {
+            if (!dateStr) return new Date();
+            if (dateStr.includes('T')) return new Date(dateStr);
+            return new Date(dateStr + 'T00:00:00');
+        };
+
+        suscripcionesList.forEach(sub => {
+            if (sub.estado !== 'ACTIVA') return;
+
+            const plan = planesList.find(p => p.id === sub.plan);
+            if (!plan) return;
+
+            // Si es plan gratuito o de costo cero, no genera cobros
+            const price = sub.ciclo === 'ANUAL' ? plan.precio_anual : plan.precio_mensual;
+            if (!price || parseFloat(price) === 0) return;
+
+            const startDate = parseLocalDate(sub.fecha_inicio);
+            const renDate = sub.fecha_renovacion ? parseLocalDate(sub.fecha_renovacion) : now;
+            
+            // Generar sugeridos hasta la fecha de renovación o el día de hoy, lo que sea menor
+            const endDate = renDate < now ? renDate : now;
+
+            let currentCycleDate = new Date(startDate);
+            while (currentCycleDate <= endDate) {
+                const month = currentCycleDate.getMonth();
+                const year = currentCycleDate.getFullYear();
+
+                // Verificar si ya existe un pago real para este ciclo (mismo mes y año para mensual, o mismo año para anual)
+                const hasPayment = allData.some(p => {
+                    if (p.empresa != sub.empresa) return false;
+                    if (p.suscripcion != sub.id) return false;
+                    
+                    const pDate = new Date(p.fecha_pago);
+                    if (sub.ciclo === 'ANUAL') {
+                        return pDate.getFullYear() === year;
+                    } else {
+                        return pDate.getFullYear() === year && pDate.getMonth() === month;
+                    }
+                });
+
+                if (!hasPayment) {
+                    suggested.push({
+                        id: `suggested_${sub.id}_${year}_${month}`,
+                        empresa: sub.empresa,
+                        suscripcion: sub.id,
+                        plan: sub.plan,
+                        monto: price,
+                        moneda: 'DOP',
+                        metodo_pago: 'TRANSFERENCIA',
+                        referencia: `Auto-generado ${month + 1}/${year}`,
+                        fecha_pago: new Date(currentCycleDate),
+                        estado: 'SUGERIDO',
+                        ciclo_label: sub.ciclo === 'ANUAL' ? `Año ${year}` : `${month + 1}/${year}`
+                    });
+                }
+
+                // Avanzar ciclo
+                if (sub.ciclo === 'ANUAL') {
+                    currentCycleDate.setFullYear(currentCycleDate.getFullYear() + 1);
+                } else {
+                    currentCycleDate.setMonth(currentCycleDate.getMonth() + 1);
+                }
+            }
+        });
+
+        return suggested;
+    }
+
+    // --- ACCIÓN EN CASCADA (Confirmar pagos anteriores) ---
+    async function processPaymentAndCascade(targetPayment, confirmCascade = false) {
+        try {
+            showToast('Procesando', 'Registrando pago principal...', 'info');
+
+            let paymentId = targetPayment.id;
+            
+            // 1. Si es un pago sugerido, primero crearlo en la API
+            if (targetPayment.estado === 'SUGERIDO') {
+                const payload = {
+                    empresa: targetPayment.empresa,
+                    suscripcion: targetPayment.suscripcion,
+                    plan: targetPayment.plan,
+                    monto: parseFloat(targetPayment.monto).toFixed(2),
+                    moneda: targetPayment.moneda,
+                    metodo_pago: targetPayment.metodo_pago,
+                    referencia: targetPayment.referencia,
+                    fecha_pago: targetPayment.fecha_pago.toISOString(),
+                    observaciones: 'Pago estándar autogenerado por ciclo de suscripción'
+                };
+                const res = await API.post('/pagos/', payload);
+                paymentId = res.id;
+            }
+
+            // 2. Confirmar el pago principal
+            await API.post(`/pagos/${paymentId}/confirmar/`);
+
+            // 3. Procesar pagos anteriores si el usuario aceptó la cascada
+            if (confirmCascade) {
+                showToast('Procesando', 'Confirmando pagos pendientes históricos...', 'info');
+                
+                const olderSug = suggestedPayments.filter(p => 
+                    p.empresa == targetPayment.empresa && 
+                    p.suscripcion == targetPayment.suscripcion && 
+                    new Date(p.fecha_pago) < new Date(targetPayment.fecha_pago)
+                );
+
+                const olderPend = allData.filter(p => 
+                    p.empresa == targetPayment.empresa && 
+                    p.suscripcion == targetPayment.suscripcion && 
+                    p.estado === 'PENDIENTE' && 
+                    new Date(p.fecha_pago) < new Date(targetPayment.fecha_pago) &&
+                    p.id != paymentId
+                );
+
+                // A. Confirmar pagos reales pendientes anteriores
+                for (const pend of olderPend) {
+                    await API.post(`/pagos/${pend.id}/confirmar/`);
+                }
+
+                // B. Crear y confirmar pagos sugeridos anteriores
+                for (const sug of olderSug) {
+                    const payload = {
+                        empresa: sug.empresa,
+                        suscripcion: sug.suscripcion,
+                        plan: sug.plan,
+                        monto: parseFloat(sug.monto).toFixed(2),
+                        moneda: sug.moneda,
+                        metodo_pago: sug.metodo_pago,
+                        referencia: sug.referencia,
+                        fecha_pago: sug.fecha_pago.toISOString(),
+                        observaciones: 'Pago estándar autogenerado (actualización en cascada)'
+                    };
+                    const res = await API.post('/pagos/', payload);
+                    await API.post(`/pagos/${res.id}/confirmar/`);
+                }
+            }
+
+            showToast('Éxito', 'Pago(s) procesado(s) y confirmado(s) correctamente', 'success');
+            loadData();
+        } catch (err) {
+            showToast('Error', err.message, 'error');
+            loadData();
+        }
+    }
 
     // --- CARGA DE DATOS ---
     async function loadData() {
@@ -57,6 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
             empresasList = empRes;
             suscripcionesList = subsRes;
             planesList = planesRes;
+
+            // Calcular cobros sugeridos / esperados en base a las suscripciones activas
+            suggestedPayments = calculateSuggestedPayments();
             
             empresaFilter.innerHTML = `<option value="">Todas las empresas</option>` + 
                 empresasList.map(e => `<option value="${e.id}">${e.razon_social}</option>`).join('');
@@ -76,13 +230,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.toLowerCase();
         const empresaId = empresaFilter.value;
 
-        let filtered = allData;
+        // Mezclar pagos reales con los sugeridos si estamos en la pestaña 'todos' o 'pendientes'
+        let combined = [...allData];
+        if (currentTab === 'todos' || currentTab === 'pendientes') {
+            combined = [...combined, ...suggestedPayments];
+        }
+
+        let filtered = combined;
 
         // 1. Filtro por tab
         if (currentTab === 'pendientes') {
-            filtered = filtered.filter(p => p.estado === 'PENDIENTE');
+            filtered = filtered.filter(p => p.estado === 'PENDIENTE' || p.estado === 'SUGERIDO');
         } else if (currentTab === 'historial') {
-            filtered = filtered.filter(p => p.estado !== 'PENDIENTE');
+            filtered = filtered.filter(p => p.estado !== 'PENDIENTE' && p.estado !== 'SUGERIDO');
         }
 
         // 2. Filtro por dropdown empresa
@@ -120,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.estado === 'CONFIRMADO') estadoColor = 'green';
             else if (item.estado === 'RECHAZADO') estadoColor = 'red';
             else if (item.estado === 'PENDIENTE') estadoColor = 'yellow';
+            else if (item.estado === 'SUGERIDO') estadoColor = 'blue';
 
             return `
             <tr>
@@ -135,23 +296,71 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn btn-sm btn-outline btn-confirmar" data-id="${item.id}" style="color:var(--accent); border-color:var(--accent);">Confirmar</button>
                         <button class="btn btn-sm btn-outline btn-rechazar" data-id="${item.id}" style="color:var(--danger); border-color:var(--danger);">Rechazar</button>
                     </div>
+                    ` : item.estado === 'SUGERIDO' ? `
+                    <div class="action-btns">
+                        <button class="btn btn-sm btn-outline btn-generar" data-id="${item.id}" style="color:var(--accent); border-color:var(--accent);">Generar y Confirmar</button>
+                    </div>
                     ` : '<span class="text-muted" style="font-size:0.75rem">Sin acciones</span>'}
                 </td>
             </tr>
         `}).join('');
 
         // Binds
-        document.querySelectorAll('.btn-confirmar').forEach(btn => {
+        document.querySelectorAll('.btn-confirmar, .btn-generar').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 currentPagoId = e.currentTarget.dataset.id;
+                const isSuggested = e.currentTarget.classList.contains('btn-generar');
                 currentAccion = 'confirmar';
                 
+                const targetPayment = allData.find(p => p.id == currentPagoId) || suggestedPayments.find(p => p.id == currentPagoId);
+                if (!targetPayment) return;
+
+                // Contar cobros y pagos anteriores pendientes
+                const targetDate = new Date(targetPayment.fecha_pago);
+                
+                const olderSug = suggestedPayments.filter(p => 
+                    p.empresa == targetPayment.empresa && 
+                    p.suscripcion == targetPayment.suscripcion && 
+                    new Date(p.fecha_pago) < targetDate
+                );
+
+                const olderPend = allData.filter(p => 
+                    p.empresa == targetPayment.empresa && 
+                    p.suscripcion == targetPayment.suscripcion && 
+                    p.estado === 'PENDIENTE' && 
+                    new Date(p.fecha_pago) < targetDate &&
+                    p.id != targetPayment.id
+                );
+
+                const totalOlder = olderSug.length + olderPend.length;
+
+                const cascadeOptionContainer = document.getElementById('cascadeOptionContainer');
+                const cascadeLabel = document.getElementById('cascadeLabel');
+                const chkCascade = document.getElementById('chkCascade');
+
+                if (totalOlder > 0) {
+                    cascadeOptionContainer.style.display = 'block';
+                    cascadeLabel.textContent = `Registrar y confirmar también los ${totalOlder} pagos anteriores pendientes`;
+                    chkCascade.checked = true;
+                } else {
+                    cascadeOptionContainer.style.display = 'none';
+                    chkCascade.checked = false;
+                }
+
                 accionIcon.className = 'confirm-icon green';
                 accionIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
-                accionTitle.textContent = 'Confirmar Pago';
-                accionText.textContent = '¿Está seguro que ha recibido y verificado este pago?';
-                btnConfirmAccion.className = 'btn btn-accent';
-                btnConfirmAccion.textContent = 'Confirmar Pago';
+                
+                if (isSuggested) {
+                    accionTitle.textContent = 'Generar y Confirmar Pago';
+                    accionText.textContent = `¿Está seguro que desea generar y confirmar el pago sugerido para el ciclo ${targetPayment.ciclo_label}?`;
+                    btnConfirmAccion.className = 'btn btn-accent';
+                    btnConfirmAccion.textContent = 'Generar y Confirmar';
+                } else {
+                    accionTitle.textContent = 'Confirmar Pago';
+                    accionText.textContent = '¿Está seguro que ha recibido y verificado este pago?';
+                    btnConfirmAccion.className = 'btn btn-accent';
+                    btnConfirmAccion.textContent = 'Confirmar Pago';
+                }
                 
                 modalAccion.classList.add('open');
             });
@@ -161,6 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 currentPagoId = e.currentTarget.dataset.id;
                 currentAccion = 'rechazar';
+
+                // Ocultar opción cascada en rechazos
+                document.getElementById('cascadeOptionContainer').style.display = 'none';
                 
                 accionIcon.className = 'confirm-icon danger';
                 accionIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
@@ -232,9 +444,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     suscripcionSelectForm.addEventListener('change', (e) => {
         const selectedOption = e.target.options[e.target.selectedIndex];
-        const planId = selectedOption.getAttribute('data-plan-id');
-        if (planId) {
-            planSelectForm.value = planId;
+        const subId = e.target.value;
+        if (!subId) return;
+
+        const sub = suscripcionesList.find(s => s.id == subId);
+        if (sub) {
+            planSelectForm.value = sub.plan;
+            
+            // Auto-llenar el monto correspondiente según el ciclo (mensual o anual) del plan
+            const plan = planesList.find(p => p.id === sub.plan);
+            if (plan) {
+                const price = sub.ciclo === 'ANUAL' ? plan.precio_anual : plan.precio_mensual;
+                if (price) {
+                    document.getElementById('monto').value = parseFloat(price).toFixed(2);
+                }
+            }
         }
     });
 
@@ -265,10 +489,54 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSaveModal.textContent = 'Registrando...';
 
         try {
-            await API.post('/pagos/', payload);
+            const res = await API.post('/pagos/', payload);
             showToast('Éxito', 'Pago registrado correctamente', 'success');
             closeModal();
-            loadData();
+
+            const newPago = res;
+            const targetDate = new Date(newPago.fecha_pago);
+
+            // Contar anteriores pendientes o sugeridos
+            const olderSug = suggestedPayments.filter(p => 
+                p.empresa == newPago.empresa && 
+                p.suscripcion == newPago.suscripcion && 
+                new Date(p.fecha_pago) < targetDate
+            );
+
+            const olderPend = allData.filter(p => 
+                p.empresa == newPago.empresa && 
+                p.suscripcion == newPago.suscripcion && 
+                p.estado === 'PENDIENTE' && 
+                new Date(p.fecha_pago) < targetDate &&
+                p.id != newPago.id
+            );
+
+            const totalOlder = olderSug.length + olderPend.length;
+
+            if (totalOlder > 0) {
+                // Hay cobros anteriores pendientes. Abrir diálogo de confirmación en cascada.
+                currentPagoId = newPago.id;
+                currentAccion = 'confirmar';
+
+                const cascadeOptionContainer = document.getElementById('cascadeOptionContainer');
+                const cascadeLabel = document.getElementById('cascadeLabel');
+                const chkCascade = document.getElementById('chkCascade');
+
+                cascadeOptionContainer.style.display = 'block';
+                cascadeLabel.textContent = `Registrar y confirmar también los ${totalOlder} pagos anteriores pendientes`;
+                chkCascade.checked = true;
+
+                accionIcon.className = 'confirm-icon green';
+                accionIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+                accionTitle.textContent = 'Confirmar Pago Creado';
+                accionText.textContent = `El pago manual ha sido registrado como PENDIENTE. ¿Desea confirmarlo ahora y procesar en cascada los ciclos anteriores atrasados?`;
+                btnConfirmAccion.className = 'btn btn-accent';
+                btnConfirmAccion.textContent = 'Confirmar y Cascada';
+
+                modalAccion.classList.add('open');
+            } else {
+                loadData();
+            }
         } catch (err) {
             showToast('Error', err.message, 'error');
         } finally {
@@ -295,10 +563,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnConfirmAccion.textContent = 'Procesando...';
 
         try {
-            await API.post(`/pagos/${currentPagoId}/${currentAccion}/`);
-            showToast('Éxito', `Pago ${currentAccion}do correctamente`, 'success');
-            modalAccion.classList.remove('open');
-            loadData();
+            if (currentAccion === 'confirmar') {
+                const targetPayment = allData.find(p => p.id == currentPagoId) || suggestedPayments.find(p => p.id == currentPagoId);
+                if (targetPayment) {
+                    const confirmCascade = document.getElementById('chkCascade').checked;
+                    modalAccion.classList.remove('open');
+                    await processPaymentAndCascade(targetPayment, confirmCascade);
+                }
+            } else {
+                // Rechazar
+                await API.post(`/pagos/${currentPagoId}/${currentAccion}/`);
+                showToast('Éxito', `Pago ${currentAccion}do correctamente`, 'success');
+                modalAccion.classList.remove('open');
+                loadData();
+            }
         } catch (err) {
             showToast('Error', err.message, 'error');
         } finally {

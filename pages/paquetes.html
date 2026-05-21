@@ -94,13 +94,13 @@
                     </div>
 
                     <div class="form-grid-2">
-                        <div class="form-group">
+                        <div class="form-group" id="group_suscripcion">
                             <label class="form-label" for="suscripcion">Suscripción Asociada</label>
                             <select id="suscripcion" class="form-select" disabled>
                                 <option value="">Seleccione la empresa primero...</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="group_plan">
                             <label class="form-label" for="plan">Plan Asociado</label>
                             <select id="plan" class="form-select" disabled>
                                 <option value="">Seleccione la empresa primero...</option>
@@ -113,7 +113,7 @@
                             <label class="form-label" for="total_comprobantes">Total Comprobantes <span class="required">*</span></label>
                             <input type="number" id="total_comprobantes" class="form-input" min="1" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="group_comprobantes_usados">
                             <label class="form-label" for="comprobantes_usados">Comprobantes Usados <span class="required">*</span></label>
                             <input type="number" id="comprobantes_usados" class="form-input" min="0" value="0" required>
                         </div>
@@ -128,7 +128,7 @@
                                 <option value="CORTESIA">Cortesía / Regalo</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="group_estado">
                             <label class="form-label" for="estado">Estado <span class="required">*</span></label>
                             <select id="estado" class="form-select" required>
                                 <option value="PENDIENTE">Pendiente</option>

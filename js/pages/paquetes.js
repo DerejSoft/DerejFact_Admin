@@ -130,6 +130,33 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(filtered);
     }, 300));
 
+    // --- CONTROL DE VISIBILIDAD POR ORIGEN ---
+    function toggleFieldsByOrigen() {
+        const origen = document.getElementById('origen').value;
+        const groupSuscripcion = document.getElementById('group_suscripcion');
+        const groupPlan = document.getElementById('group_plan');
+        
+        if (origen === 'SUSCRIPCION') {
+            if (groupSuscripcion) groupSuscripcion.style.display = 'block';
+            if (groupPlan) groupPlan.style.display = 'block';
+            suscripcionSelectForm.disabled = false;
+            planSelectForm.disabled = true; // Derivado de la suscripción
+        } else if (origen === 'COMPRA_EXTRA') {
+            if (groupSuscripcion) groupSuscripcion.style.display = 'none';
+            if (groupPlan) groupPlan.style.display = 'block';
+            suscripcionSelectForm.disabled = true;
+            suscripcionSelectForm.value = '';
+            planSelectForm.disabled = false; // Elegir plan para el que se compra extra
+        } else if (origen === 'CORTESIA') {
+            if (groupSuscripcion) groupSuscripcion.style.display = 'none';
+            if (groupPlan) groupPlan.style.display = 'none';
+            suscripcionSelectForm.disabled = true;
+            suscripcionSelectForm.value = '';
+            planSelectForm.disabled = true;
+            planSelectForm.value = '';
+        }
+    }
+
     // --- MODAL LOGIC ---
     function openModal(entity = null) {
         dataForm.reset();
@@ -140,18 +167,26 @@ document.addEventListener('DOMContentLoaded', () => {
         suscripcionSelectForm.disabled = true;
         planSelectForm.disabled = true;
 
+        const groupUsados = document.getElementById('group_comprobantes_usados');
+        const groupEstado = document.getElementById('group_estado');
+
         if (entity) {
             modalTitle.textContent = 'Editar Paquete';
             document.getElementById('entityId').value = entity.id;
             document.getElementById('empresa').value = entity.empresa || '';
             document.getElementById('empresa').disabled = true;
 
-            // Trigger change manually to populate selects for this company
+            // Mostrar campos exclusivos de edición
+            if (groupUsados) groupUsados.style.display = 'block';
+            if (groupEstado) groupEstado.style.display = 'block';
+
+            // Trigger change manualmente to populate selects for this company
             populateSelectsForEmpresa(entity.empresa);
             
             setTimeout(() => {
                 document.getElementById('suscripcion').value = entity.suscripcion || '';
                 document.getElementById('plan').value = entity.plan || '';
+                toggleFieldsByOrigen(); // Asegurar visibilidad correcta después de cargar selects
             }, 50);
 
             document.getElementById('total_comprobantes').value = entity.total_comprobantes || 0;
@@ -167,12 +202,20 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTitle.textContent = 'Nuevo Paquete';
             document.getElementById('empresa').disabled = false;
             
+            // Ocultar campos innecesarios en creación
+            if (groupUsados) groupUsados.style.display = 'none';
+            if (groupEstado) groupEstado.style.display = 'none';
+            document.getElementById('comprobantes_usados').value = 0;
+            document.getElementById('estado').value = 'ACTIVO';
+            document.getElementById('origen').value = 'SUSCRIPCION';
+            
             // Default expiration to next month
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1);
             document.getElementById('fecha_vencimiento').value = nextMonth.toISOString().slice(0, 16);
         }
         
+        toggleFieldsByOrigen();
         modalForm.classList.add('open');
     }
 
@@ -199,6 +242,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const planName = plan ? plan.nombre : 'Plan desconocido';
             suscripcionSelectForm.innerHTML += `<option value="${sub.id}" data-plan-id="${sub.plan}">${planName} (${sub.ciclo}) - ${fmtDate(sub.fecha_inicio)}</option>`;
         });
+
+        // Autorellenado inteligente para Nueva Suscripción
+        const isNew = !document.getElementById('entityId').value;
+        const origen = document.getElementById('origen').value;
+        if (isNew && origen === 'SUSCRIPCION' && subsEmpresa.length > 0) {
+            const activeSub = subsEmpresa.find(s => s.estado === 'ACTIVA') || subsEmpresa[0];
+            suscripcionSelectForm.value = activeSub.id;
+            
+            // Auto-seleccionar plan
+            planSelectForm.value = activeSub.plan || '';
+            
+            // Auto-llenar total_comprobantes del plan
+            const plan = planesList.find(p => p.id === activeSub.plan);
+            if (plan) {
+                document.getElementById('total_comprobantes').value = plan.limite_comprobantes || '';
+            }
+            
+            // Auto-llenar fecha_vencimiento de la suscripción (usando fecha_renovacion)
+            if (activeSub.fecha_renovacion) {
+                const renDate = new Date(activeSub.fecha_renovacion);
+                renDate.setMinutes(renDate.getMinutes() - renDate.getTimezoneOffset());
+                document.getElementById('fecha_vencimiento').value = renDate.toISOString().slice(0, 16);
+            }
+
+            showToast('Información', 'Se precargaron los datos según la suscripción activa de la empresa', 'info');
+        }
     }
 
     empresaSelectForm.addEventListener('change', (e) => {
@@ -206,10 +275,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     suscripcionSelectForm.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const planId = selectedOption.getAttribute('data-plan-id');
-        if (planId) {
-            planSelectForm.value = planId;
+        const subId = e.target.value;
+        if (!subId) return;
+
+        const sub = suscripcionesList.find(s => s.id == subId);
+        if (sub) {
+            planSelectForm.value = sub.plan || '';
+            const plan = planesList.find(p => p.id === sub.plan);
+            if (plan) {
+                document.getElementById('total_comprobantes').value = plan.limite_comprobantes || '';
+            }
+            if (sub.fecha_renovacion) {
+                const renDate = new Date(sub.fecha_renovacion);
+                renDate.setMinutes(renDate.getMinutes() - renDate.getTimezoneOffset());
+                document.getElementById('fecha_vencimiento').value = renDate.toISOString().slice(0, 16);
+            }
         }
     });
 
@@ -265,6 +345,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNew.addEventListener('click', () => openModal());
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
+
+    // Escuchar cambios en origen para mostrar/ocultar campos
+    const origenSelect = document.getElementById('origen');
+    if (origenSelect) {
+        origenSelect.addEventListener('change', () => {
+            toggleFieldsByOrigen();
+            // Re-ejecutar precarga si cambia a SUSCRIPCION
+            if (origenSelect.value === 'SUSCRIPCION') {
+                populateSelectsForEmpresa(empresaSelectForm.value);
+            }
+        });
+    }
     
     // Iniciar
     loadData();

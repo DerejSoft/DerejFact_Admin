@@ -89,6 +89,43 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(filtered);
     }, 300));
 
+    // --- CONTROL DE CAMPOS DE PRECIO ---
+    function togglePriceFields() {
+        const ciclo = document.getElementById('ciclo_disponible').value;
+        const groupMensual = document.getElementById('group_precio_mensual');
+        const groupAnual = document.getElementById('group_precio_anual');
+        const inputMensual = document.getElementById('precio_mensual');
+        const inputAnual = document.getElementById('precio_anual');
+
+        if (ciclo === 'MENSUAL') {
+            if (groupMensual) groupMensual.style.display = 'block';
+            inputMensual.required = true;
+            
+            if (groupAnual) groupAnual.style.display = 'none';
+            inputAnual.required = false;
+            inputAnual.value = '0';
+        } else if (ciclo === 'ANUAL') {
+            if (groupMensual) groupMensual.style.display = 'none';
+            inputMensual.required = false;
+            inputMensual.value = '0';
+
+            if (groupAnual) groupAnual.style.display = 'block';
+            inputAnual.required = true;
+        } else { // AMBOS
+            if (groupMensual) groupMensual.style.display = 'block';
+            inputMensual.required = true;
+            if (groupAnual) groupAnual.style.display = 'block';
+            inputAnual.required = true;
+        }
+    }
+
+    // --- CONTROL DE TIPOS ECF ---
+    function updateEcfInput() {
+        const checkedBoxes = document.querySelectorAll('input[name="tipos_ecf"]:checked');
+        const values = Array.from(checkedBoxes).map(cb => cb.value);
+        document.getElementById('tipos_ecf_input').value = values.join(', ');
+    }
+
     // --- MODAL LOGIC ---
     function openModal(entity = null) {
         dataForm.reset();
@@ -106,15 +143,30 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('precio_anual').value = entity.precio_anual || 0;
             document.getElementById('dias_gracia').value = entity.dias_gracia || 5;
             
-            // Array a string separado por comas
-            const ecfs = Array.isArray(entity.tipos_ecf_permitidos) ? entity.tipos_ecf_permitidos.join(', ') : '';
-            document.getElementById('tipos_ecf_input').value = ecfs;
+            // Marcar checkboxes correspondientes
+            const permitidos = Array.isArray(entity.tipos_ecf_permitidos) ? entity.tipos_ecf_permitidos.map(x => parseInt(x)) : [];
+            document.querySelectorAll('input[name="tipos_ecf"]').forEach(cb => {
+                cb.checked = permitidos.includes(parseInt(cb.value));
+            });
             
             document.getElementById('activo').checked = entity.activo;
         } else {
             modalTitle.textContent = 'Nuevo Plan';
+            // Valores por defecto
+            document.getElementById('ciclo_disponible').value = 'AMBOS';
+            document.getElementById('precio_mensual').value = '';
+            document.getElementById('precio_anual').value = '';
+            document.getElementById('dias_gracia').value = 5;
+
+            // Checkboxes por defecto (los más comunes)
+            const defaultChecked = [31, 32, 33, 34, 41, 43];
+            document.querySelectorAll('input[name="tipos_ecf"]').forEach(cb => {
+                cb.checked = defaultChecked.includes(parseInt(cb.value));
+            });
         }
         
+        togglePriceFields();
+        updateEcfInput();
         modalForm.classList.add('open');
     }
 
@@ -175,6 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNew.addEventListener('click', () => openModal());
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
+
+    // Escuchar cambios de ciclo disponible para cambiar campos de precio
+    const cicloSelect = document.getElementById('ciclo_disponible');
+    if (cicloSelect) {
+        cicloSelect.addEventListener('change', togglePriceFields);
+    }
+
+    // Escuchar cambios en checkboxes de e-CF para actualizar input oculto
+    document.querySelectorAll('input[name="tipos_ecf"]').forEach(cb => {
+        cb.addEventListener('change', updateEcfInput);
+    });
     
     // Iniciar
     loadData();

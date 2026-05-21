@@ -118,11 +118,11 @@
                     </div>
 
                     <div class="form-grid-2">
-                        <div class="form-group">
+                        <div class="form-group" id="group_precio_mensual">
                             <label class="form-label" for="precio_mensual">Precio Mensual (DOP) <span class="required">*</span></label>
                             <input type="number" id="precio_mensual" class="form-input" step="0.01" min="0" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="group_precio_anual">
                             <label class="form-label" for="precio_anual">Precio Anual (DOP) <span class="required">*</span></label>
                             <input type="number" id="precio_anual" class="form-input" step="0.01" min="0" required>
                         </div>
@@ -134,9 +134,50 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="tipos_ecf_input">Tipos de e-CF Permitidos (IDs separados por coma)</label>
-                        <input type="text" id="tipos_ecf_input" class="form-input" placeholder="Ej. 31, 32, 41">
-                        <span class="form-hint">31: Crédito, 32: Consumo, 41: Compras, etc.</span>
+                        <label class="form-label" style="margin-bottom: 8px;">Tipos de e-CF Permitidos <span class="required">*</span></label>
+                        <div class="ecf-checkbox-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="31" checked>
+                                <span class="form-check-label">31: Crédito Fiscal</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="32" checked>
+                                <span class="form-check-label">32: Consumo</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="33" checked>
+                                <span class="form-check-label">33: Nota de Débito</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="34" checked>
+                                <span class="form-check-label">34: Nota de Crédito</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="41">
+                                <span class="form-check-label">41: Compras</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="43">
+                                <span class="form-check-label">43: Gastos Menores</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="44">
+                                <span class="form-check-label">44: Regímenes Especiales</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="45">
+                                <span class="form-check-label">45: Gubernamental</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="46">
+                                <span class="form-check-label">46: Exportaciones</span>
+                            </label>
+                            <label class="form-check" style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="tipos_ecf" value="47">
+                                <span class="form-check-label">47: Pagos al Exterior</span>
+                            </label>
+                        </div>
+                        <input type="hidden" id="tipos_ecf_input" required>
                     </div>
 
                     <label class="form-check" style="margin-top: 10px;">

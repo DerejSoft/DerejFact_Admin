@@ -162,11 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
 
-    // Limpieza de RNC en tiempo real
+    // Limpieza y límite de RNC en tiempo real (solo dígitos, máximo 11)
     const rncInput = document.getElementById('rnc');
     if (rncInput) {
         rncInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/\D/g, '');
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11);
         });
     }
     

@@ -115,8 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rncInput.value = rncInput.value.replace(/\D/g, ''); // Limpiar en caso de copy-paste
         const rncValue = rncInput.value.trim();
 
-        if (rncValue.length !== 9 && rncValue.length !== 11) {
-            showToast('Validación RNC', 'El RNC debe tener exactamente 9 dígitos (Persona Jurídica) u 11 dígitos (Persona Física).', 'warning');
+        if (rncValue.length < 9 || rncValue.length > 11) {
+            showToast('Validación RNC', 'El RNC debe tener entre 9 y 11 dígitos (Persona Jurídica 9 o Persona Física 11).', 'warning');
             rncInput.focus();
             return;
         }

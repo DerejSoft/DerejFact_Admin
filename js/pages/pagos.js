@@ -83,15 +83,31 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadData() {
         tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding: 30px;"><div class="spinner-wrapper"><div class="spinner"></div></div></td></tr>`;
         try {
+            let pagosPromise;
+            
             // Cargar pagos según el tab activo para optimizar la request
-            const estadoParam = currentTab === 'pendientes'
-                ? '?estado=PENDIENTE'
-                : currentTab === 'historial'
-                    ? '?estado=CONFIRMADO'
-                    : '';
+            if (currentTab === 'pendientes') {
+                pagosPromise = API.get('/pagos/?estado=PENDIENTE');
+            } else if (currentTab === 'historial') {
+                pagosPromise = API.get('/pagos/historial/');
+            } else {
+                // Tab "todos": fetch PENDIENTES y el historial, y combinarlos
+                pagosPromise = Promise.all([
+                    API.get('/pagos/?estado=PENDIENTE').catch(() => []),
+                    API.get('/pagos/historial/').catch(() => [])
+                ]).then(([pendientes, historial]) => {
+                    const pendArr = Array.isArray(pendientes) ? pendientes : [];
+                    const histArr = Array.isArray(historial) ? historial : [];
+                    // Combinar y eliminar duplicados por ID (por si acaso)
+                    const map = new Map();
+                    pendArr.forEach(p => map.set(p.id, p));
+                    histArr.forEach(p => map.set(p.id, p));
+                    return Array.from(map.values());
+                });
+            }
 
             const [pagosRes, empRes, subsRes, planesRes] = await Promise.all([
-                API.get(`/pagos/${estadoParam}`),
+                pagosPromise,
                 API.get('/empresas/'),
                 API.get('/suscripciones/'),
                 API.get('/planes/')
@@ -124,11 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let filtered = [...allData];
 
-        // Filtro por tab (historial muestra CONFIRMADO + RECHAZADO)
+        // Filtro por tab (la API ya hizo el filtro inicial por estado/endpoint)
         if (currentTab === 'pendientes') {
             filtered = filtered.filter(p => p.estado === 'PENDIENTE');
         } else if (currentTab === 'historial') {
-            filtered = filtered.filter(p => p.estado === 'CONFIRMADO' || p.estado === 'RECHAZADO');
+            // No filtramos por estado aquí porque /pagos/historial/ puede tener otra estructura de datos,
+            // o simplemente ya viene filtrado desde el backend.
+            // Opcional: si sabemos que son Pagos en estado CONFIRMADO/RECHAZADO, podríamos dejar el filtro,
+            // pero es más seguro no filtrarlos si confiamos en el endpoint.
+            // De hecho, si /pagos/historial/ retorna Pagos confirmados/rechazados, el backend ya los filtró.
         }
 
         // Filtro por empresa (dropdown)
@@ -156,20 +176,33 @@ document.addEventListener('DOMContentLoaded', () => {
         tableCount.textContent = `(${data.length})`;
 
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No se encontraron pagos</div></td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No se encontraron datos</div></td></tr>`;
             return;
         }
 
         tableBody.innerHTML = data.map(item => {
+            const isHistorial = item.periodo_mes !== undefined || item.monto_pagado !== undefined;
             const emp        = empresasList.find(e => e.id === item.empresa);
             const empName    = item.empresa_nombre || emp?.razon_social || 'Desconocida';
             const planName   = item.plan_nombre    || planesList.find(p => p.id === item.plan)?.nombre || '—';
-            const cfg        = ESTADO_CONFIG[item.estado] || { badge: 'gray', label: item.estado };
-            const metodoBadge = item.metodo_pago
-                ? `<span class="badge badge-gray">${item.metodo_pago}</span>`
-                : '<span class="text-muted" style="font-size:0.75rem">—</span>';
+            
+            // Campos dependiendo si es un Pago o un Historial
+            const monto      = isHistorial ? item.monto_pagado : item.monto;
+            const moneda     = item.moneda || 'DOP'; // Historial might not have moneda
+            const fechaStr   = isHistorial ? `${item.periodo_mes}/${item.periodo_ano}` : fmtDate(item.fecha_pago);
+            const refStr     = isHistorial ? `Comp: ${item.comprobantes_asignados}` : (item.referencia || '<span class="text-muted">—</span>');
+            
+            const estadoObj  = isHistorial 
+                ? { badge: 'blue', label: 'Historial' }
+                : (ESTADO_CONFIG[item.estado] || { badge: 'gray', label: item.estado });
+                
+            const metodoBadge = isHistorial 
+                ? '<span class="text-muted" style="font-size:0.75rem">—</span>'
+                : (item.metodo_pago
+                    ? `<span class="badge badge-gray">${item.metodo_pago}</span>`
+                    : '<span class="text-muted" style="font-size:0.75rem">—</span>');
 
-            const acciones = item.estado === 'PENDIENTE'
+            const acciones = (item.estado === 'PENDIENTE')
                 ? `<div class="action-btns">
                        <button class="btn btn-sm btn-outline btn-confirmar"
                                data-id="${item.id}"
@@ -188,11 +221,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
                 <td><strong>${empName}</strong></td>
                 <td><span style="font-size:0.82rem;">${planName}</span></td>
-                <td><strong>${fmtMoney(item.monto, item.moneda)}</strong></td>
+                <td><strong>${fmtMoney(monto, moneda)}</strong></td>
                 <td>${metodoBadge}</td>
-                <td>${item.referencia || '<span class="text-muted">—</span>'}</td>
-                <td>${fmtDate(item.fecha_pago)}</td>
-                <td><span class="badge badge-${cfg.badge}">${cfg.label}</span></td>
+                <td>${refStr}</td>
+                <td>${fechaStr}</td>
+                <td><span class="badge badge-${estadoObj.badge}">${estadoObj.label}</span></td>
                 <td>${acciones}</td>
             </tr>`;
         }).join('');

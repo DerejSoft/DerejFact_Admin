@@ -18,15 +18,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataForm = document.getElementById('dataForm');
 
     let allData = [];
+    let suscripcionesList = [];
+    let planesList = [];
+    let paquetesList = [];
 
     // --- CARGA DE DATOS ---
     async function loadData() {
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center" style="padding: 30px;"><div class="spinner-wrapper"><div class="spinner"></div></div></td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding: 30px;"><div class="spinner-wrapper"><div class="spinner"></div></div></td></tr>`;
         try {
-            allData = await API.get('/empresas/');
+            const [empRes, subsRes, planesRes, paquetesRes] = await Promise.all([
+                API.get('/empresas/'),
+                API.get('/suscripciones/'),
+                API.get('/planes/'),
+                API.get('/paquetes/')
+            ]);
+            allData = empRes;
+            suscripcionesList = subsRes;
+            planesList = planesRes;
+            paquetesList = paquetesRes;
             renderTable(allData);
         } catch (error) {
-            tableBody.innerHTML = `<tr><td colspan="5"><div class="empty-state">Error al cargar datos</div></td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state">Error al cargar datos</div></td></tr>`;
             showToast('Error', 'No se pudieron cargar las empresas', 'error');
         }
     }
@@ -36,17 +48,31 @@ document.addEventListener('DOMContentLoaded', () => {
         tableCount.textContent = `(${data.length})`;
         
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No hay empresas registradas</div></td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No hay empresas registradas</div></td></tr>`;
             return;
         }
 
-        tableBody.innerHTML = data.map(item => `
+        tableBody.innerHTML = data.map(item => {
+            const subsEmpresa = suscripcionesList.filter(s => s.empresa == item.id);
+            const activeSub = subsEmpresa.find(s => s.estado === 'ACTIVA') || subsEmpresa[0];
+            const plan = activeSub ? planesList.find(p => p.id === activeSub.plan) : null;
+            const planName = plan ? plan.nombre : 'Sin plan';
+
+            const paquetesEmpresa = paquetesList.filter(p => p.empresa == item.id);
+            const cantidadAdquirida = paquetesEmpresa.reduce((acc, p) => {
+                const total = Number(p.total_comprobantes) || 0;
+                return acc + total;
+            }, 0);
+
+            return `
             <tr>
                 <td><strong>${item.rnc}</strong></td>
                 <td>
                     <div>${item.razon_social}</div>
                     ${item.nombre_comercial ? `<div class="kpi-sub">${item.nombre_comercial}</div>` : ''}
                 </td>
+                <td><span class="badge badge-gray">${planName}</span></td>
+                <td><strong>${cantidadAdquirida}</strong></td>
                 <td><span class="badge badge-${item.ambiente === 'produccion' ? 'green' : 'gray'}">${item.ambiente}</span></td>
                 <td><span class="badge badge-${item.activa ? 'blue' : 'red'}">${item.activa ? 'ACTIVA' : 'INACTIVA'}</span></td>
                 <td>
@@ -59,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
 
         // Bind Edit buttons
         document.querySelectorAll('.btn-edit').forEach(btn => {

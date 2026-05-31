@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CARGA DE DATOS ---
     async function loadData() {
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 30px;"><div class="spinner-wrapper"><div class="spinner"></div></div></td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding: 30px;"><div class="spinner-wrapper"><div class="spinner"></div></div></td></tr>`;
         try {
             const [paquetesRes, empRes, subsRes, planesRes] = await Promise.all([
                 API.get('/paquetes/'),
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderTable(allData);
         } catch (error) {
-            tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">Error al cargar datos</div></td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state">Error al cargar datos</div></td></tr>`;
             showToast('Error', 'No se pudieron cargar los paquetes', 'error');
         }
     }
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tableCount.textContent = `(${data.length})`;
         
         if (data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No hay paquetes registrados</div></td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No hay paquetes registrados</div></td></tr>`;
             return;
         }
 
@@ -69,6 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const usados = item.comprobantes_usados || 0;
             const disponibles = total - usados;
             const percent = Math.min(100, Math.round((usados / total) * 100));
+
+            const directPlan = planesList.find(p => p.id === item.plan);
+            let planName = directPlan ? directPlan.nombre : '';
+            if (!planName && item.suscripcion) {
+                const sub = suscripcionesList.find(s => s.id === item.suscripcion);
+                const subPlan = sub ? planesList.find(p => p.id === sub.plan) : null;
+                planName = subPlan ? subPlan.nombre : '';
+            }
+            const planLabel = planName || 'Sin plan';
             
             let barColor = '';
             if (percent >= 90) barColor = 'danger';
@@ -83,8 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
                 <td><strong>${empName}</strong></td>
                 <td>
-                    <span class="badge badge-gray">${item.origen}</span>
+                    <div>${planLabel}</div>
+                    <div class="kpi-sub">
+                        <span class="badge badge-gray">${item.origen}</span>
+                    </div>
                 </td>
+                <td><strong>${total}</strong></td>
                 <td>
                     <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
                         <span>${usados} usados</span>

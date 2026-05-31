@@ -29,11 +29,12 @@
 }
 .sidebar-logo-icon {
   width: 36px; height: 36px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-glow);
+  background: transparent;
+  box-shadow: none;
 }
 .sidebar-logo-icon svg { width: 20px; height: 20px; color: #fff; }
+.sidebar-logo-icon img { width: 22px; height: 22px; object-fit: contain; }
 .sidebar-brand { display: flex; flex-direction: column; overflow: hidden; transition: opacity var(--transition); }
 .sidebar-brand-name { font-size: 1rem; font-weight: 700; color: var(--sidebar-text-active); white-space: nowrap; letter-spacing: -0.3px; }
 .sidebar-brand-badge { font-size: 0.64rem; font-weight: 600; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }

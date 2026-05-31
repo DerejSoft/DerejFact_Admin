@@ -48,21 +48,21 @@ body, html {
 }
 
 .login-logo {
-    width: 64px;
-    height: 64px;
+    width: 96px;
+    height: 96px;
     margin: 0 auto 16px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    border-radius: 18px;
+    background: transparent;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 24px var(--primary-glow);
+    box-shadow: none;
 }
 
-.login-logo svg {
-    width: 32px;
-    height: 32px;
-    color: #fff;
+.login-logo img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
 }
 
 .login-title {

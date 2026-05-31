@@ -317,13 +317,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const origenValue = document.getElementById('origen').value;
+        const suscripcionValue = document.getElementById('suscripcion').value || null;
+        const planValue = document.getElementById('plan').value || null;
+        const totalValue = parseInt(document.getElementById('total_comprobantes').value, 10);
+
         const id = document.getElementById('entityId').value;
         const payload = {
-            suscripcion: document.getElementById('suscripcion').value || null,
-            plan: document.getElementById('plan').value || null,
-            total_comprobantes: parseInt(document.getElementById('total_comprobantes').value),
+            suscripcion: suscripcionValue,
+            plan: planValue,
+            total_comprobantes: totalValue,
             comprobantes_usados: parseInt(document.getElementById('comprobantes_usados').value),
-            origen: document.getElementById('origen').value,
+            origen: origenValue,
             estado: document.getElementById('estado').value,
             // Convertir a formato ISO con Z al final para la API
             fecha_vencimiento: new Date(document.getElementById('fecha_vencimiento').value).toISOString()

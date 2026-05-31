@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAlertasDGII(empresas, secuenciales);
 
         } catch (error) {
-            showToast('Error', 'No se pudieron cargar todos los datos del dashboard', 'error');
+                showToast('Error', error.message || 'No se pudieron cargar todos los datos del dashboard', 'error');
             console.error(error);
         } finally {
             btnRefresh.disabled = false;

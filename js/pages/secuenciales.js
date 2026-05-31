@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable(allData);
         } catch (error) {
             tableBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">Error al cargar datos</div></td></tr>`;
-            showToast('Error', 'No se pudieron cargar los secuenciales', 'error');
+            showToast('Error', error.message || 'No se pudieron cargar los secuenciales', 'error');
         }
     }
 

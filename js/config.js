@@ -21,14 +21,18 @@ const CONFIG = {
   // ─── RUTAS INTERNAS DE LA APP ─────────────────────────────────────────────
   ROUTES: {
     LOGIN:         './index.html',
+    RECOVER:       './pages/recover.html',
     DASHBOARD:     './pages/dashboard.html',
     EMPRESAS:      './pages/empresas.html',
+    ONBOARDING:    './pages/onboarding.html',
     USUARIOS:      './pages/usuarios.html',
     PLANES:        './pages/planes.html',
     SUSCRIPCIONES: './pages/suscripciones.html',
     PAQUETES:      './pages/paquetes.html',
     API_KEYS:      './pages/api-keys.html',
+    CLIENTES:      './pages/clientes.html',
     SECUENCIALES:  './pages/secuenciales.html',
     PAGOS:         './pages/pagos.html',
+    CATALOGOS_DGII: './pages/catalogos-dgii.html',
   },
 };

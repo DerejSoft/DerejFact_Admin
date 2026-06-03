@@ -3,7 +3,7 @@
  * Fetch con Bearer JWT + auto-refresh si recibe 401
  */
 const API = {
-  async request(method, endpoint, data = null) {
+  async request(method, endpoint, data = null, raw = false) {
     const makeRequest = async (token) => {
       const opts = {
         method,
@@ -32,12 +32,25 @@ const API = {
     }
 
     if (!res.ok) {
+      let errObj = null;
+      try { errObj = await res.json(); } catch { /* no JSON body */ }
+
       let errMsg = `Error ${res.status}`;
-      try {
-        const err = await res.json();
-        errMsg = err.detail || err.non_field_errors?.[0] || JSON.stringify(err);
-      } catch { /* usar mensaje genérico */ }
-      throw new Error(errMsg);
+      if (errObj) {
+        if (errObj.detail) errMsg = errObj.detail;
+        else if (Array.isArray(errObj.non_field_errors) && errObj.non_field_errors[0]) errMsg = errObj.non_field_errors[0];
+        else if (typeof errObj === 'object') {
+          const firstKey = Object.keys(errObj)[0];
+          const firstVal = errObj[firstKey];
+          if (Array.isArray(firstVal)) errMsg = `${firstKey}: ${firstVal[0]}`;
+          else if (typeof firstVal === 'string') errMsg = firstVal;
+        }
+      }
+
+      const err = new Error(errMsg);
+      err.status = res.status;
+      err.fields = errObj || null;
+      throw err;
     }
 
     // 204 No Content
@@ -45,6 +58,9 @@ const API = {
     
     const responseData = await res.json();
     
+    // raw=true → devuelve el objeto completo (para paginación manual)
+    if (raw) return responseData;
+
     // Extraer automáticamente los resultados si la API usa paginación de DRF
     if (responseData && typeof responseData === 'object' && 'results' in responseData && Array.isArray(responseData.results)) {
         return responseData.results;
@@ -54,6 +70,7 @@ const API = {
   },
 
   get(endpoint)            { return this.request('GET',    endpoint); },
+  getFull(endpoint)        { return this.request('GET',    endpoint, null, true); },
   post(endpoint, data)     { return this.request('POST',   endpoint, data); },
   patch(endpoint, data)    { return this.request('PATCH',  endpoint, data); },
   put(endpoint, data)      { return this.request('PUT',    endpoint, data); },

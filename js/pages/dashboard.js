@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 suscripciones,
                 paquetes,
                 apiKeys,
-                pagos,
+                pagosPendientes,
+                pagosHistorial,
                 secuenciales
             ] = await Promise.all([
                 API.get('/empresas/').catch(() => []),
@@ -47,13 +48,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 API.get('/suscripciones/').catch(() => []),
                 API.get('/paquetes/').catch(() => []),
                 API.get('/api-keys/').catch(() => []),
-                API.get('/pagos/').catch(() => []),
+                API.get('/pagos/?estado=PENDIENTE').catch(() => []),
+                API.get('/pagos/historial/').catch(() => API.get('/pagos/?estado=CONFIRMADO').catch(() => [])),
                 API.get('/secuenciales/').catch(() => [])
             ]);
 
-            updateKPIs({ empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagos, secuenciales });
-            updateCharts({ empresas, suscripciones, pagos, apiKeys });
-            updateTables(empresas, pagos);
+            const pagosAll = [
+                ...(Array.isArray(pagosPendientes) ? pagosPendientes : []),
+                ...(Array.isArray(pagosHistorial) ? pagosHistorial : [])
+            ];
+
+            updateKPIs({ empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagosPendientes, secuenciales });
+            updateCharts({ empresas, suscripciones, pagos: pagosAll, apiKeys });
+            updateTables(empresas, pagosHistorial);
             updateAlertasDGII(empresas, secuenciales);
 
         } catch (error) {
@@ -66,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Actualizar tarjetas KPI */
     function updateKPIs(data) {
-        const { empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagos, secuenciales } = data;
+        const { empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagosPendientes, secuenciales } = data;
 
         document.getElementById('kpiEmpresas').textContent = empresas.filter(e => e.activa).length;
         document.getElementById('kpiUsuarios').textContent = usuarios.length;
@@ -74,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('kpiSuscripciones').textContent = suscripciones.filter(s => s.estado === 'ACTIVA').length;
         document.getElementById('kpiPaquetes').textContent = paquetes.filter(p => p.estado === 'ACTIVO').length;
         document.getElementById('kpiApiKeys').textContent = apiKeys.filter(k => k.activa).length;
-        document.getElementById('kpiPagos').textContent = pagos.filter(p => p.estado === 'PENDIENTE').length; 
+        document.getElementById('kpiPagos').textContent = (pagosPendientes || []).length; 
         document.getElementById('kpiSecuenciales').textContent = secuenciales.filter(s => s.bloqueado).length;
 
         // Nuevos KPIs: Latencia y DGII
@@ -123,16 +130,22 @@ document.addEventListener('DOMContentLoaded', () => {
             tbodyPagos.innerHTML = `<tr><td colspan="3"><div class="empty-state">No hay pagos recientes</div></td></tr>`;
         } else {
             tbodyPagos.innerHTML = ultimosPagos.map(p => {
+                const isHistorial = p.periodo_mes !== undefined || p.monto_pagado !== undefined;
+                const monto = isHistorial ? p.monto_pagado : p.monto;
+                const metodo = p.metodo_pago || '—';
                 let badgeColor = 'gray';
-                if (p.estado === 'CONFIRMADO') badgeColor = 'green';
-                else if (p.estado === 'RECHAZADO') badgeColor = 'red';
-                else if (p.estado === 'PENDIENTE') badgeColor = 'yellow';
+                let estadoLabel = p.estado || (isHistorial ? 'HISTORIAL' : 'PENDIENTE');
+
+                if (estadoLabel === 'CONFIRMADO') badgeColor = 'green';
+                else if (estadoLabel === 'RECHAZADO') badgeColor = 'red';
+                else if (estadoLabel === 'PENDIENTE') badgeColor = 'yellow';
+                else if (estadoLabel === 'HISTORIAL') badgeColor = 'blue';
 
                 return `
                 <tr>
-                    <td><strong>${fmtMoney(p.monto, p.moneda)}</strong></td>
-                    <td>${p.metodo_pago}</td>
-                    <td><span class="badge badge-${badgeColor}">${p.estado || 'PENDIENTE'}</span></td>
+                    <td><strong>${fmtMoney(monto, p.moneda)}</strong></td>
+                    <td>${metodo}</td>
+                    <td><span class="badge badge-${badgeColor}">${estadoLabel}</span></td>
                 </tr>
             `}).join('');
         }

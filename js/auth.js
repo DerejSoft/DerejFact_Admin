@@ -73,7 +73,21 @@ const AUTH = {
     return user;
   },
 
-  logout() {
+  async logout() {
+    const refresh = this.getRefreshToken();
+    const access  = this.getAccessToken();
+    if (refresh) {
+      try {
+        await fetch(`${CONFIG.API_BASE_URL}/auth/logout/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(access ? { Authorization: `Bearer ${access}` } : {}),
+          },
+          body: JSON.stringify({ refresh }),
+        });
+      } catch { /* red caída o endpoint no disponible: cliente limpia igual */ }
+    }
     this.clearSession();
     const base = window.location.pathname.includes('/pages/') ? '../' : './';
     window.location.replace(base + 'index.html');

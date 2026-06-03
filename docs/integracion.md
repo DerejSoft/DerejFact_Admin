@@ -21,10 +21,13 @@ Rutas disponibles bajo `/api/v1/`:
 - `api-keys/`
 - `api-keys/{id}/revocar/`
 - `api-keys/{id}/rotar/`
+- `clientes/`
+- `clientes/{rnc_cedula}/`
 - `secuenciales/`
 - `secuenciales/{id}/preview/`
 - `secuenciales/{id}/bloquear/`
 - `secuenciales/{id}/desbloquear/`
+- `secuencias/` (onboarding)
 - `pagos/`
 - `pagos/{id}/actualizar_confirmacion/`
 - `pagos/{id}/confirmar/` (deprecated, usar actualizar_confirmacion)
@@ -32,14 +35,20 @@ Rutas disponibles bajo `/api/v1/`:
 - `pagos/{id}/pdf/a4/`
 - `pagos/{id}/pdf/80mm/`
 - `pagos/historial/`
+- `provincias/`
+- `municipios/`
+- `unidades-medida/`
+- `monedas/`
+- `impuestos-adicionales/`
+- `formas-pago/`
+- `webhooks/`
+- `webhooks/{id}/entregas/`
 
 Rutas que hoy estan vacias o no implementadas:
 
-- `comprobantes/`
-- `dgii/`
-- `webhooks/`
+- `comprobantes/` (modelos listos, vistas pendientes)
 
-Si quieres probar en Postman, concentrate en las rutas de arriba. Las otras no te van a responder porque aun no tienen vistas.
+Si quieres probar en Postman, concentrate en las rutas de arriba.
 
 ## 2. Autenticacion
 
@@ -343,7 +352,74 @@ Content-Type: application/json
 }
 ```
 
-### 4.9 Crear secuencial
+### 4.9 Clientes
+
+Cliente se autentica vía API-Key o JWT. El `rnc_cedula` debe ser único por empresa. Si el cliente ya existe, el POST devuelve 409.
+
+```http
+GET /api/v1/clientes/
+Authorization: Api-Key <token_completo>
+```
+
+```http
+POST /api/v1/clientes/
+Authorization: Api-Key <token_completo>
+Content-Type: application/json
+```
+
+```json
+{
+  "rnc_cedula": "00123456789",
+  "nombre": "Juan Pérez",
+  "correo": "juan@ejemplo.com",
+  "telefono": "8095551234",
+  "direccion": "Calle Principal 123"
+}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "id": "<uuid>",
+  "empresa": "<empresa_uuid>",
+  "rnc_cedula": "00123456789",
+  "nombre": "Juan Pérez",
+  "correo": "juan@ejemplo.com",
+  "telefono": "8095551234",
+  "direccion": "Calle Principal 123",
+  "activo": true,
+  "creado_at": "2026-05-31T00:00:00Z",
+  "actualizado_at": "2026-05-31T00:00:00Z"
+}
+```
+
+```http
+GET /api/v1/clientes/{rnc_cedula}/
+Authorization: Api-Key <token_completo>
+```
+
+```http
+PATCH /api/v1/clientes/{rnc_cedula}/
+Authorization: Api-Key <token_completo>
+Content-Type: application/json
+```
+
+```json
+{
+  "nombre": "Juan Pérez Actualizado",
+  "telefono": "8095555678"
+}
+```
+
+```http
+DELETE /api/v1/clientes/{rnc_cedula}/
+Authorization: Api-Key <token_completo>
+```
+
+El DELETE es lógico (marca `activo=false`). Respuesta 204 sin body.
+
+### 4.10 Crear secuencial
 
 ```http
 POST /api/v1/secuenciales/
@@ -391,7 +467,7 @@ POST /api/v1/secuenciales/{id}/desbloquear/
 Authorization: Bearer <jwt_access>
 ```
 
-### 4.10 Pagos
+### 4.11 Pagos
 
 #### Crear pago manual
 
@@ -618,6 +694,18 @@ GET /api/v1/empresas/{id}/comprobantes/
 Authorization: Bearer <jwt_access>
 ```
 
+### Clientes por empresa
+
+```http
+GET /api/v1/clientes/
+Authorization: Api-Key <token_completo>
+```
+
+```http
+GET /api/v1/clientes/{rnc_cedula}/
+Authorization: Api-Key <token_completo>
+```
+
 ### Listados generales
 
 ```http
@@ -625,6 +713,7 @@ GET /api/v1/planes/
 GET /api/v1/suscripciones/
 GET /api/v1/paquetes/
 GET /api/v1/api-keys/
+GET /api/v1/clientes/
 GET /api/v1/secuenciales/
 GET /api/v1/pagos/
 ```
@@ -637,10 +726,9 @@ No pierdas tiempo en estos endpoints porque el codigo actual no tiene vistas rea
 - `POST /api/v1/comprobantes/nota-credito/`
 - `POST /api/v1/comprobantes/nota-debito/`
 - `GET /api/v1/comprobantes/{id}/`
-- cualquier ruta de `dgii/`
-- cualquier ruta de `webhooks/`
+- `GET/POST /api/v1/comprobantes/`
 
-Esas rutas aparecen en la documentacion vieja, pero aun no existen en el proyecto.
+Las rutas de `dgii/` y `webhooks/` **ya existen** (ver secciones 11.11 y 11.12). `comprobantes/` sigue pendiente de implementacion.
 
 ## 7. Flujo recomendado de prueba en Postman
 
@@ -786,6 +874,7 @@ Cada pago confirmado tiene dos formatos de comprobante:
 - Paquete: `empresa`, `suscripcion`, `plan`, `total_comprobantes`, `comprobantes_usados`, `estado`, `origen`, `fecha_vencimiento`
 - API Key: `empresa`, `nombre`, `scopes`, `allowed_ips`, `rate_limit_cantidad`, `rate_limit_ventana`, `expira_at`, `activa`
 - Secuencial: `empresa`, `tipo_ecf`, `ultimo_numero`, `minimo_asignado`, `maximo_asignado`, `bloqueado`, `motivo_bloqueo`
+- Cliente: `rnc_cedula`, `nombre`, `correo` (opcional), `telefono` (opcional), `direccion` (opcional)
 - **[POST] Pago**: `empresa`, `suscripcion`, `plan`, `monto` (opcional), `moneda`, `tipo_pago`, `metodo_pago`, `referencia`, `observaciones`
 - **[PATCH] Confirmar Pago**: `metodo_pago`, `referencia` (si no es EFECTIVO), `observaciones` (opcional)
 - Pago (respuesta): `empresa`, `suscripcion`, `plan`, `monto`, `moneda`, `tipo_pago`, `metodo_pago`, `referencia`, `fecha_pago`, `observaciones`
@@ -803,3 +892,192 @@ Y para el panel humano siempre es:
 ```http
 Authorization: Bearer <jwt_access>
 ```
+
+---
+
+## 11. Tabla unificada de endpoints existentes
+
+Todas las rutas bajo `/api/v1/` que **sí existen hoy** en el código. La columna **Permiso** indica:
+- `JWT` → header `Authorization: Bearer <jwt_access>` (panel admin)
+- `API-Key` → header `Authorization: Api-Key <token>` (POS/terceros)
+- `API-Key / JWT` → ambos métodos son aceptados
+- `Público` → sin autenticación
+
+### 11.1 Autenticación
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/auth/login/` | 200 | Público | Login con email + password. Devuelve `access` + `refresh`. |
+| `POST` | `/api/v1/auth/token/refresh/` | 200 | Público | Refresca `access` usando `refresh`. |
+| `POST` | `/api/v1/auth/recover-password/` | 200 | Público | Inicia recuperación de contraseña. |
+
+### 11.2 Usuarios
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/usuarios/` | 201 | JWT | Crear usuario. `SUPERADMIN` no lleva empresa. |
+| `GET` | `/api/v1/usuarios/` | 200 | JWT | Listar usuarios (filtrado por rol/empresa). |
+| `GET` | `/api/v1/usuarios/me/` | 200 | JWT | Perfil del usuario autenticado. |
+| `PATCH` | `/api/v1/usuarios/me/` | 200 | JWT | Actualizar `nombre` y `apellido` propios. |
+| `POST` | `/api/v1/usuarios/me/change-password/` | 200 | JWT | Cambiar password (`password_actual` + `password_nueva`). |
+
+### 11.3 Empresas
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/empresas/` | 201 | JWT | Crear empresa. |
+| `GET` | `/api/v1/empresas/` | 200 | API-Key / JWT | Listar empresas (API-Key retorna la propia; JWT todas). |
+| `GET` | `/api/v1/empresas/{id}/` | 200 | API-Key / JWT | Detalle de empresa. |
+| `GET` | `/api/v1/empresas/{id}/suscripcion/` | 200 | JWT | Suscripción activa de la empresa. |
+| `GET` | `/api/v1/empresas/{id}/comprobantes/` | 200 | JWT | Paquetes activos de comprobantes. |
+
+### 11.4 Planes
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/planes/` | 201 | JWT | Crear plan. |
+| `GET` | `/api/v1/planes/` | 200 | JWT | Listar planes. |
+
+### 11.5 Suscripciones
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/suscripciones/` | 201 | JWT | Crear suscripción. |
+| `GET` | `/api/v1/suscripciones/` | 200 | JWT | Listar suscripciones. |
+
+### 11.6 Paquetes
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/paquetes/` | 201 | JWT | Crear paquete de comprobantes. |
+| `GET` | `/api/v1/paquetes/` | 200 | JWT | Listar paquetes. |
+
+### 11.7 API Keys
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/api-keys/` | 201 | JWT | Crear API Key. Devuelve `token` una sola vez. |
+| `GET` | `/api/v1/api-keys/` | 200 | JWT | Listar API Keys. |
+| `POST` | `/api/v1/api-keys/{id}/revocar/` | 200 | JWT | Revocar key (body: `motivo`). |
+| `POST` | `/api/v1/api-keys/{id}/rotar/` | 200 | JWT | Rotar key (`nombre`, `expira_at` opcionales). |
+
+### 11.8 Clientes
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/clientes/` | 201 / 409 | API-Key / JWT | Crear cliente. 409 si `rnc_cedula` ya existe en la empresa. |
+| `GET` | `/api/v1/clientes/` | 200 | API-Key / JWT | Listar clientes de la empresa. |
+| `GET` | `/api/v1/clientes/{rnc_cedula}/` | 200 / 404 | API-Key / JWT | Detalle por RNC/Cédula. |
+| `PATCH` | `/api/v1/clientes/{rnc_cedula}/` | 200 | API-Key / JWT | Actualizar nombre, correo, teléfono, dirección. |
+| `DELETE` | `/api/v1/clientes/{rnc_cedula}/` | 204 | API-Key / JWT | Borrado lógico (`activo=false`). |
+
+### 11.9 Secuenciales
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/secuenciales/` | 201 | JWT | Crear secuencial (reservar rango e-NCF). |
+| `GET` | `/api/v1/secuenciales/` | 200 | JWT | Listar secuenciales. |
+| `GET` | `/api/v1/secuenciales/{id}/preview/` | 200 | JWT | Preview del próximo e-NCF disponible. |
+| `POST` | `/api/v1/secuenciales/{id}/bloquear/` | 200 | JWT | Bloquear secuencial (body: `motivo`). |
+| `POST` | `/api/v1/secuenciales/{id}/desbloquear/` | 200 | JWT | Desbloquear secuencial. |
+
+### 11.10 Pagos
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/pagos/` | 201 | JWT | Crear pago manual (`RENOVACION` o `ADICIONAL`). |
+| `GET` | `/api/v1/pagos/` | 200 | JWT | Listar pagos. Por defecto solo `PENDIENTE`. Filtro `?estado=`. |
+| `PATCH` | `/api/v1/pagos/{id}/actualizar_confirmacion/` | 201 | JWT | Confirmar pago (`metodo_pago`, `referencia`, `observaciones`). |
+| `POST` | `/api/v1/pagos/{id}/confirmar/` | 201 | JWT | **DEPRECATED.** Usar `actualizar_confirmacion`. |
+| `POST` | `/api/v1/pagos/{id}/rechazar/` | 200 | JWT | Rechazar pago (solo `PENDIENTE`). |
+| `GET` | `/api/v1/pagos/{id}/pdf/a4/` | 200 | JWT | Descargar comprobante PDF tamaño carta. |
+| `GET` | `/api/v1/pagos/{id}/pdf/80mm/` | 200 | JWT | Descargar comprobante PDF tamaño ticket. |
+| `GET` | `/api/v1/pagos/historial/` | 200 | JWT | Historial completo. Filtro `?empresa=<uuid>`. |
+
+### 11.11 Catálogos DGII
+
+La app `dgii` expone los catálogos oficiales de la DGII (Tablas I–IV del e-CF v1.0).  
+**Autenticación:** JWT (`Authorization: Bearer <jwt_access>`).  
+**Escritura** (POST, PATCH, DELETE) solo para SUPERADMIN. **Lectura** (GET) cualquier usuario autenticado.  
+Todos los lookups son por código (string), no UUID.
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `GET` | `/api/v1/provincias/` | 200 | JWT | Listar provincias (Tabla III DGII, 32 provincias). |
+| `POST` | `/api/v1/provincias/` | 201 | JWT + SUPERADMIN | Crear provincia. |
+| `GET` | `/api/v1/provincias/{codigo}/` | 200 | JWT | Detalle de provincia. |
+| `PATCH` | `/api/v1/provincias/{codigo}/` | 200 | JWT + SUPERADMIN | Actualizar nombre de provincia. |
+| `DELETE` | `/api/v1/provincias/{codigo}/` | 204 | JWT + SUPERADMIN | Eliminar provincia. |
+| `GET` | `/api/v1/municipios/` | 200 | JWT | Listar municipios. Filtro `?provincia={codigo}`. |
+| `POST` | `/api/v1/municipios/` | 201 | JWT + SUPERADMIN | Crear municipio. |
+| `GET` | `/api/v1/municipios/{codigo}/` | 200 | JWT | Detalle de municipio. |
+| `PATCH` | `/api/v1/municipios/{codigo}/` | 200 | JWT + SUPERADMIN | Actualizar municipio. |
+| `DELETE` | `/api/v1/municipios/{codigo}/` | 204 | JWT + SUPERADMIN | Eliminar municipio. |
+| `GET` | `/api/v1/unidades-medida/` | 200 | JWT | Listar unidades de medida (Tabla IV, 62 unidades). |
+| `POST` | `/api/v1/unidades-medida/` | 201 | JWT + SUPERADMIN | Crear unidad de medida. |
+| `GET` | `/api/v1/unidades-medida/{codigo}/` | 200 | JWT | Detalle de unidad. |
+| `PATCH` | `/api/v1/unidades-medida/{codigo}/` | 200 | JWT + SUPERADMIN | Actualizar unidad. |
+| `DELETE` | `/api/v1/unidades-medida/{codigo}/` | 204 | JWT + SUPERADMIN | Eliminar unidad. |
+| `GET` | `/api/v1/monedas/` | 200 | JWT | Listar monedas ISO 4217 (Tabla II, 17 monedas). |
+| `POST` | `/api/v1/monedas/` | 201 | JWT + SUPERADMIN | Crear moneda. |
+| `GET` | `/api/v1/monedas/{codigo_iso}/` | 200 | JWT | Detalle de moneda. |
+| `PATCH` | `/api/v1/monedas/{codigo_iso}/` | 200 | JWT + SUPERADMIN | Actualizar moneda. |
+| `DELETE` | `/api/v1/monedas/{codigo_iso}/` | 204 | JWT + SUPERADMIN | Eliminar moneda. |
+| `GET` | `/api/v1/impuestos-adicionales/` | 200 | JWT | Listar impuestos adicionales (Tabla I, 39 códigos). |
+| `POST` | `/api/v1/impuestos-adicionales/` | 201 | JWT + SUPERADMIN | Crear impuesto adicional. |
+| `GET` | `/api/v1/impuestos-adicionales/{codigo}/` | 200 | JWT | Detalle de impuesto. |
+| `PATCH` | `/api/v1/impuestos-adicionales/{codigo}/` | 200 | JWT + SUPERADMIN | Actualizar impuesto. |
+| `DELETE` | `/api/v1/impuestos-adicionales/{codigo}/` | 204 | JWT + SUPERADMIN | Eliminar impuesto. |
+| `GET` | `/api/v1/formas-pago/` | 200 | JWT | Listar formas de pago (11 tipos). |
+| `POST` | `/api/v1/formas-pago/` | 201 | JWT + SUPERADMIN | Crear forma de pago. |
+| `GET` | `/api/v1/formas-pago/{codigo}/` | 200 | JWT | Detalle de forma de pago. |
+| `PATCH` | `/api/v1/formas-pago/{codigo}/` | 200 | JWT + SUPERADMIN | Actualizar forma de pago. |
+| `DELETE` | `/api/v1/formas-pago/{codigo}/` | 204 | JWT + SUPERADMIN | Eliminar forma de pago. |
+
+### 11.12 Webhooks
+
+**Autenticación:** API-Key (`Authorization: Api-Key <token>`).  
+El webhook usa HMAC (firma del payload) para garantizar integridad. El `secret` se devuelve solo en la creación.  
+Ver detalles de implementación en `docs/plan_webhook_snapshot.md`.
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/webhooks/` | 201 | API-Key | Crear webhook. Body: `nombre`, `url`, `eventos[]`. Devuelve `secret` una sola vez. |
+| `GET` | `/api/v1/webhooks/` | 200 | API-Key | Listar webhooks de la empresa. |
+| `GET` | `/api/v1/webhooks/{id}/` | 200 | API-Key | Detalle de webhook. |
+| `PATCH` | `/api/v1/webhooks/{id}/` | 200 | API-Key | Actualizar nombre, url, eventos, activo. |
+| `DELETE` | `/api/v1/webhooks/{id}/` | 204 | API-Key | Eliminar webhook. |
+| `GET` | `/api/v1/webhooks/{id}/entregas/` | 200 | API-Key | Listar entregas (historial de intentos), paginado. |
+
+### 11.13 Secuencias (Onboarding)
+
+**Autenticación:** API-Key con scope `empresa:onboarding`.  
+Registra los rangos de e-NCF asignados por la DGII para la empresa. Se usa al activar una empresa por primera vez.
+
+| Método | URL | Status | Permiso | Descripción |
+|--------|-----|--------|---------|-------------|
+| `POST` | `/api/v1/secuencias/` | 201 / 403 | API-Key (scope `empresa:onboarding`) | Registrar rangos de e-NCF. Body: `secuencias[]` con `tipo_ecf`, `desde`, `hasta`, `volumen`. Valida que el volumen total no exceda `plan.limite_comprobantes`. Bloquea si la empresa tiene deuda pendiente (`onboarding_bloqueado`). |
+
+Ejemplo de body:
+```json
+{
+  "secuencias": [
+    {"tipo_ecf": 31, "desde": "E310000000001", "hasta": "E310000010000", "volumen": 10000},
+    {"tipo_ecf": 32, "desde": "E320000000001", "hasta": "E320000005000", "volumen": 5000}
+  ]
+}
+```
+
+### 11.14 Códigos de error comunes (endpoints actuales)
+
+| Status | Cuándo | Ejemplo |
+|--------|--------|---------|
+| 400 | Validación de campos fallida | `{"rnc_cedula": ["RNC/Cédula debe ser 9 (RNC) u 11 (Cédula) dígitos."]}` |
+| 400 | `referencia` faltante en pago no-EFECTIVO | `{"referencia": ["Referencia obligatoria si el método no es EFECTIVO."]}` |
+| 400 | Password actual incorrecta | `{"password_actual": ["Contraseña actual incorrecta."]}` |
+| 401 | Sin API-Key o JWT | `{"detail": "Authentication credentials were not provided."}` |
+| 403 | API-Key inválida, revocada o sin scope | `{"detail": "Invalid API key."}` |
+| 403 | API-Key sin IP permitida | `{"detail": "IP not allowed for this API key."}` |
+| 404 | Recurso no existe (otra empresa o ID inválido) | `{"detail": "Not found."}` |
+| 409 | Conflicto: cliente duplicado en la empresa | `{"rnc_cedula": ["Ya existe un cliente con este RNC/Cédula."]}` |
+| 500 | Error interno del servidor | `{"detail": "Internal server error."}` |

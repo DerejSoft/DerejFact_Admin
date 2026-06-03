@@ -123,6 +123,22 @@ body, html {
     margin-top: 12px;
 }
 
+.login-extras {
+    margin-top: -8px;
+    text-align: center;
+}
+
+.link-recover {
+    color: var(--primary-light);
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: color var(--transition);
+}
+.link-recover:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
 .btn-submit {
     width: 100%;
     justify-content: center;

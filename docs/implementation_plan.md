@@ -49,48 +49,63 @@ Panel administrativo web para el SaaS de facturación electrónica **DerejFact**
 
 ```
 derejPanAdmin/
-├── index.html                  ← REEMPLAZAR (nueva página de login)
-├── index.css                   ← REEMPLAZAR (variables globales + login styles)
-├── index.js                    ← REEMPLAZAR (lógica de login)
+├── index.html                  ← Login
+├── index.css                   ← Variables globales + estilos de login
+├── index.js                    ← Lógica de login
 │
 ├── pages/
-│   ├── dashboard.html          ← [NEW] Home con métricas rápidas
-│   ├── empresas.html           ← [NEW] CRUD de empresas
-│   ├── usuarios.html           ← [NEW] CRUD de usuarios
-│   ├── planes.html             ← [NEW] CRUD de planes
-│   ├── suscripciones.html      ← [NEW] CRUD de suscripciones
-│   ├── paquetes.html           ← [NEW] Paquetes de comprobantes
-│   ├── api-keys.html           ← [NEW] API Keys + modal de copia
-│   ├── secuenciales.html       ← [NEW] Ver + bloquear/desbloquear
-│   └── pagos.html              ← [NEW] Pagos + confirmar/rechazar
+│   ├── recover.html            ← [Fase 1] Recuperación de contraseña (página pública, sin sidebar)
+│   ├── dashboard.html          ← Home con métricas rápidas
+│   ├── empresas.html           ← Lista + drawer de detalle + modal de edición
+│   ├── onboarding.html         ← [Fase 1] Wizard "Nuevo Cliente" (empresa + admin)
+│   ├── usuarios.html           ← Lista + CRUD
+│   ├── planes.html             ← Lista + CRUD
+│   ├── suscripciones.html      ← Lista + CRUD
+│   ├── paquetes.html           ← Lista + CRUD
+│   ├── api-keys.html           ← Lista + modal de creación (token una sola vez)
+│   ├── secuenciales.html       ← Lista + preview/bloquear/desbloquear
+│   └── pagos.html              ← Lista + confirmar/rechazar
 │
 ├── css/
-│   ├── variables.css           ← [NEW] Design tokens (colores, tipografía, shadows)
-│   ├── layout.css              ← [NEW] Sidebar, header, main layout
-│   └── components.css          ← [NEW] Tablas, modales, forms, cards, badges, toasts
+│   ├── variables.css           ← Design tokens (colores, tipografía, shadows, dark mode)
+│   ├── layout.css              ← Sidebar, header, main layout
+│   └── components.css          ← Tablas, modales, forms, cards, badges, toasts, drawer
 │
 ├── js/
-│   ├── config.js               ← [NEW] ⚡ Solo aquí se cambia la URL base
-│   ├── auth.js                 ← [NEW] Login, logout, guard, token refresh
-│   ├── api.js                  ← [NEW] Fetch wrapper con Bearer JWT
+│   ├── config.js               ← ⚡ ÚNICO lugar para cambiar URL base
+│   ├── auth.js                 ← Login, recover, logout server-side, guard, token refresh
+│   ├── api.js                  ← Fetch wrapper con Bearer JWT + auto-refresh + err.fields
+│   ├── forms.js                ← [Fase 1] Helper de errores por campo
+│   ├── recover.js              ← [Fase 1] Lógica del form de recuperación
+│   ├── layout.js               ← Sidebar, topbar, toasts
+│   ├── icono-global.js         ← Inyección automática del favicon
 │   └── pages/
-│       ├── dashboard.js        ← [NEW]
-│       ├── empresas.js         ← [NEW]
-│       ├── usuarios.js         ← [NEW]
-│       ├── planes.js           ← [NEW]
-│       ├── suscripciones.js    ← [NEW]
-│       ├── paquetes.js         ← [NEW]
-│       ├── api-keys.js         ← [NEW]
-│       ├── secuenciales.js     ← [NEW]
-│       └── pagos.js            ← [NEW]
+│       ├── dashboard.js
+│       ├── empresas.js         ← Lista + drawer detalle + edit modal + add admin
+│       ├── onboarding.js       ← [Fase 1] Wizard 3 pasos
+│       ├── usuarios.js
+│       ├── planes.js
+│       ├── suscripciones.js
+│       ├── paquetes.js
+│       ├── api-keys.js
+│       ├── secuenciales.js
+│       └── pagos.js
 │
 ├── public/
-│   └── background.jpg          ← (existente, se puede reusar en login)
+│   ├── background.jpg
+│   └── img/logo-p.ico
 │
 └── docs/
-    ├── contexto.md             ← (existente)
-    └── contexto_API.md         ← (existente)
+    ├── contexto.md
+    ├── contexto_API.md
+    ├── integracion.md          ← Estado real de la API (incluye sección 11 con tabla de endpoints)
+    └── implementation_plan.md  ← Este archivo
 ```
+
+> [!IMPORTANT]
+> **`pages/empresas.html` ya no permite crear empresas.** El botón "Nueva Empresa" fue eliminado. Toda creación de empresa ocurre exclusivamente vía el wizard de `pages/onboarding.html` (Paso 1: empresa, Paso 2: admin-user). `empresas.html` queda como vista de gestión: lista, drawer de detalle y modal de edición.
+>
+> Para agregar un segundo admin a una empresa existente, hay dos caminos: (a) `pages/usuarios.html` → "Nuevo Usuario", o (b) hacer click en la fila de la empresa y usar el drawer lateral → "+ Agregar administrador".
 
 ---
 
@@ -101,6 +116,7 @@ derejPanAdmin/
 |---|---|
 | Login | `POST /auth/login/` |
 | Refresh token | `POST /auth/token/refresh/` |
+| Logout (blacklist refresh) | `POST /auth/logout/` |
 | Recuperar contraseña | `POST /auth/recover-password/` |
 | Ver perfil propio | `GET /usuarios/me/` |
 | Cambiar contraseña | `POST /usuarios/me/change-password/` |
@@ -332,3 +348,71 @@ const CONFIG = {
 ### Compatibilidad
 - Chrome/Edge últimas versiones (target principal)
 - Firefox como secundario
+
+---
+
+## Fase 1 — Infraestructura de Auth & Onboarding (completada)
+
+### Cambios funcionales
+
+#### Autenticación
+- **Login**: `POST /auth/login/` con `{ email, password }` → `{ access, refresh }` en `sessionStorage`.
+- **Refresh automático**: `js/api.js` intercepta `401` y llama `POST /auth/token/refresh/` con `{ refresh }`. Si falla, fuerza logout.
+- **Logout server-side** (estándar SimpleJWT): `POST /auth/logout/` con `Authorization: Bearer <access>` y body `{ refresh }`. El backend mete el refresh en blacklist. El cliente limpia `sessionStorage` y redirige. Implementado en `js/auth.js:logout()`.
+- **Recuperación de contraseña**: página pública aislada `pages/recover.html` (sin `LAYOUT`, sin `requireAuth`) → `POST /auth/recover-password/` con `{ email }`. Respuesta siempre 200 (no revela existencia del email). Cooldown de 60s para reenviar.
+- **Errores de validación por campo**: nuevo helper `js/forms.js` con `FORMS.apply(formEl, err.fields, fieldMap?)`, `FORMS.clearErrors`, `FORMS.clearFieldError`. El wrapper `js/api.js:request()` ahora adjunta `err.fields` y `err.status` al `throw new Error(...)`, manteniendo `err.message` para no romper consumidores existentes.
+
+#### Onboarding — Wizard "Nuevo Cliente"
+- Nueva entrada en el sidebar: `+ Nuevo Cliente` (icono `plus-circle`, sección "Gestión", entre "Empresas" y "Usuarios").
+- Nueva página `pages/onboarding.html` con wizard de 3 pasos:
+  1. **Empresa** — `rnc`, `razon_social`, `nombre_comercial`, `ambiente` (select), `estado` (select), `activa` (checkbox). Valida localmente (RNC 9 u 11 dígitos) y envía `POST /empresas/`.
+  2. **Administrador** — `email`, `nombre`, `apellido`, `password` + `password_confirm`. Envía `POST /usuarios/` con `{ rol: 'ADMIN_EMPRESA', empresa: <uuid del paso 1>, is_active: true }`.
+  3. **Éxito** — Muestra resumen con UUIDs de la empresa y el admin. Botones: "Ir a Empresas", "Crear otro".
+- Navegación entre pasos preserva el estado si paso 1 ya se completó y paso 2 falla.
+- Errores de validación (campo a campo) consumidos vía `FORMS.apply`.
+
+#### Eliminación de redundancia en `empresas.html`
+- **Eliminado el botón "Nueva Empresa"** del page-header. Toda creación ocurre vía el wizard.
+- **El modal de edición se mantiene** (sigue siendo útil para cambiar `estado`, `ambiente`, `activa`).
+- **Nuevo: drawer lateral** que se abre al hacer click en una fila:
+  - Detalle completo de la empresa: RNC, Razón Social, Nombre Comercial, Ambiente, Estado, Activa, Plan activo, Comprobantes adquiridos.
+  - Lista de administradores de la empresa (filtrada localmente desde `usersList` cargado en `loadData`).
+  - Form inline "+ Agregar administrador" — empresa pre-rellenada (campo hidden), valida localmente, envía `POST /usuarios/` con `rol: 'ADMIN_EMPRESA'`, refresca la lista al éxito.
+  - Botón "Editar empresa" cierra el drawer y abre el modal de edición.
+  - Click en overlay o tecla `ESC` cierran el drawer.
+- Toda la fila es clickable (`cursor: pointer`); el botón "Editar" (icono lápiz) sigue independiente gracias a `e.stopPropagation()`.
+- `js/pages/empresas.js` ahora también carga `GET /usuarios/` en paralelo en `loadData()` para alimentar la lista de admins en el drawer.
+
+### Archivos nuevos (Fase 1)
+| Archivo | Propósito |
+|---|---|
+| `pages/recover.html` | Página pública de recuperación de contraseña |
+| `pages/onboarding.html` | Wizard 3 pasos para crear empresa + admin |
+| `js/forms.js` | Helper de errores de validación por campo |
+| `js/recover.js` | Lógica de la página de recuperación |
+| `js/pages/onboarding.js` | Lógica del wizard de "Nuevo Cliente" |
+
+### Archivos modificados (Fase 1)
+| Archivo | Cambios |
+|---|---|
+| `js/api.js` | `throw new Error(msg)` ahora adjunta `err.fields` y `err.status` |
+| `js/auth.js` | `logout()` async → `POST /auth/logout/` con `{ refresh }` (blacklist) |
+| `js/layout.js` | Sidebar: nueva entrada "+ Nuevo Cliente"; botón logout se deshabilita durante la petición |
+| `js/config.js` | Añadidas `ROUTES.RECOVER` y `ROUTES.ONBOARDING` |
+| `index.html` | Link "¿Olvidaste tu contraseña?" + carga `js/forms.js` y `js/api.js` |
+| `index.css` | Estilos `.login-extras` y `.link-recover` |
+| `css/components.css` | `.field-error`, `.has-error`, `.wizard-*`, `.success-card`, `.recover-success`, `.drawer-*` |
+| `pages/empresas.html` | Quitado botón "Nueva Empresa"; añadido `<aside class="drawer-overlay">` con detalle + admins + form inline; carga `js/forms.js` |
+| `js/pages/empresas.js` | Quitada lógica de creación; añadidas `openDrawer/closeDrawer/renderAdminList/_handleAddAdmin`; event delegation para filas; integración con `FORMS.apply` |
+
+### Decisiones diferidas a futuras fases
+| Decisión | Fase objetivo |
+|---|---|
+| Refactor del patrón CRUD repetido a `js/crud.js` | Fase 3 (recomendado) |
+| 6 páginas de catálogos DGII read-only (`provincias`, `municipios`, `unidades-medida`, `monedas`, `impuestos-adicionales`, `formas-pago`) | Fase 2 |
+| Página de Webhooks (CRUD + bitácora de entregas) | Fase 2 |
+| Confirmar/Rechazar pagos, descargar PDF A4/80mm | Fase 2 |
+| Rotar/Revocar API Keys + modal "token una sola vez" | Fase 2 |
+| Preview/Bloquear/Desbloquear Secuencial | Fase 2 |
+| Filtros de pagos (estado) + vista de historial | Fase 2 |
+| Integrar `forms.js` en `pagos.html`, `planes.html`, `suscripciones.html`, `paquetes.html`, `api-keys.html`, `secuenciales.html` | Fase 2 |

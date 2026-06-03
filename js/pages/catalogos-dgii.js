@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.nombre
             ],
             fields: [
-                { id: 'codigo', label: 'Código', type: 'text', required: true, placeholder: 'Ej. 01', maxlength: 4 },
+                { id: 'codigo', label: 'Código', type: 'text', required: true, placeholder: 'Ej. 010001', maxlength: 6, pattern: '[0-9]{6}', inputmode: 'numeric' },
                 { id: 'nombre', label: 'Nombre', type: 'text', required: true, placeholder: 'Ej. Distrito Nacional' }
             ]
         },
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ];
             },
             fields: [
-                { id: 'codigo', label: 'Código', type: 'text', required: true, placeholder: 'Ej. 0101', maxlength: 4 },
+                { id: 'codigo', label: 'Código', type: 'text', required: true, placeholder: 'Ej. 010101', maxlength: 6, pattern: '[0-9]{6}', inputmode: 'numeric' },
                 { id: 'nombre', label: 'Nombre', type: 'text', required: true, placeholder: 'Ej. Santo Domingo Norte' },
                 { id: 'provincia', label: 'Provincia', type: 'select', required: true, optionsEndpoint: '/provincias/', optionValue: 'codigo', optionLabel: 'nombre' }
             ]
@@ -171,6 +171,53 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             references.provincias = [];
         }
+    }
+
+    function makeSearchable(wrapper) {
+        const select = wrapper.querySelector('select');
+        if (!select) return;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-input searchable-select-input';
+        input.placeholder = 'Buscar...';
+        input.autocomplete = 'off';
+        const dropdown = document.createElement('div');
+        dropdown.className = 'searchable-select-dropdown';
+        wrapper.appendChild(input);
+        wrapper.appendChild(dropdown);
+        select.style.display = 'none';
+        function renderOptions(filter) {
+            dropdown.innerHTML = '';
+            const q = filter.toLowerCase();
+            let hasVisible = false;
+            Array.from(select.options).forEach(opt => {
+                if (!opt.value) return;
+                if (opt.text.toLowerCase().includes(q) || opt.value.toLowerCase().includes(q)) {
+                    hasVisible = true;
+                    const div = document.createElement('div');
+                    div.className = 'searchable-select-option';
+                    div.textContent = opt.text;
+                    if (opt.value === select.value) div.classList.add('selected');
+                    div.addEventListener('mousedown', e => {
+                        e.preventDefault();
+                        select.value = opt.value;
+                        input.value = opt.text;
+                        dropdown.classList.remove('open');
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    dropdown.appendChild(div);
+                }
+            });
+            if (!hasVisible) {
+                dropdown.innerHTML = '<div class="searchable-select-empty">Sin resultados</div>';
+            }
+        }
+        input.addEventListener('focus', () => { renderOptions(input.value); dropdown.classList.add('open'); });
+        input.addEventListener('input', () => { renderOptions(input.value); dropdown.classList.add('open'); });
+        input.addEventListener('blur', () => { setTimeout(() => dropdown.classList.remove('open'), 200); });
+        const selected = select.options[select.selectedIndex];
+        if (selected && selected.value) input.value = selected.text;
+        renderOptions('');
     }
 
     async function loadData(tab) {
@@ -313,21 +360,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lopts = references[f.optionsEndpoint.replace(/\//g, '')] || [];
                 const valKey = f.optionValue;
                 const lblKey = f.optionLabel;
+                const val = editItem ? editItem[f.id] || '' : '';
+                const disabled = isEdit && (f.id === codeFieldId) ? 'disabled' : '';
                 return `<div class="form-group">
                     <label class="form-label" for="field_${f.id}">${f.label}${f.required ? ' <span class="required">*</span>' : ''}</label>
-                    <select id="field_${f.id}" name="${f.id}" class="form-select" ${f.required ? 'required' : ''}>
-                        <option value="">— Seleccionar —</option>
-                        ${lopts.map(o => `<option value="${o[valKey]}" ${editItem && editItem[f.id] === o[valKey] ? 'selected' : ''}>${o[lblKey]}</option>`).join('')}
-                    </select>
+                    <div class="searchable-select" data-field="${f.id}">
+                        <select id="field_${f.id}" name="${f.id}" class="form-select" ${f.required ? 'required' : ''} ${disabled}>
+                            <option value="">— Seleccionar —</option>
+                            ${lopts.map(o => `<option value="${o[valKey]}" ${val === o[valKey] ? 'selected' : ''}>${o[lblKey]}</option>`).join('')}
+                        </select>
+                    </div>
                 </div>`;
             }
             const val = editItem ? (editItem[f.id] || '') : '';
             const readonly = isEdit && f.id === codeFieldId ? 'readonly' : '';
+            const patternAttr = f.pattern ? ` pattern="${f.pattern}"` : '';
+            const inputmodeAttr = f.inputmode ? ` inputmode="${f.inputmode}"` : '';
             return `<div class="form-group">
                 <label class="form-label" for="field_${f.id}">${f.label}${f.required ? ' <span class="required">*</span>' : ''}</label>
-                <input type="${f.type}" id="field_${f.id}" name="${f.id}" class="form-input" value="${val}" ${f.required ? 'required' : ''} ${readonly} placeholder="${f.placeholder || ''}" ${f.maxlength ? `maxlength="${f.maxlength}"` : ''}>
+                <input type="${f.type}" id="field_${f.id}" name="${f.id}" class="form-input" value="${val}" ${f.required ? 'required' : ''} ${readonly} placeholder="${f.placeholder || ''}" ${f.maxlength ? `maxlength="${f.maxlength}"` : ''}${patternAttr}${inputmodeAttr}>
             </div>`;
         }).join('');
+        formFields.querySelectorAll('input[inputmode="numeric"]').forEach(inp => {
+            inp.addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
+        });
+        formFields.querySelectorAll('.searchable-select').forEach(el => makeSearchable(el));
     }
 
     function openNewModal() {
@@ -350,19 +407,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function saveEntity() {
-        const tab = entityCode.dataset.tab;
-        const cat = CATALOGS[tab];
-        const code = entityCode.value;
-        const isEdit = !!code;
-        const payload = collectFormData(tab);
-
-        btnSaveModal.disabled = true;
-        FORMS.clear(dataForm);
-
         try {
+            const tab = entityCode.dataset.tab;
+            const cat = CATALOGS[tab];
+            if (!cat) { showToast('Error', 'Catálogo no encontrado', 'error'); return; }
+            const code = entityCode.value;
+            const isEdit = !!code;
+            const payload = collectFormData(tab);
+
+            btnSaveModal.disabled = true;
+            FORMS.clearErrors(dataForm);
+
             if (isEdit) {
-                const url = `${cat.endpoint}${code}/`;
-                await API.patch(url, payload);
+                await API.patch(`${cat.endpoint}${code}/`, payload);
                 showToast('Éxito', `${cat.label} actualizado correctamente`, 'success');
             } else {
                 await API.post(cat.endpoint, payload);

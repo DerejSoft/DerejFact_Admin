@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
 
             updateKPIs({ empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagosPendientes, secuenciales });
-            updateCharts({ empresas, suscripciones, pagos: pagosAll, apiKeys });
+            updateCharts({ empresas, planes, suscripciones, pagos: pagosAll, apiKeys });
             updateTables(empresas, pagosHistorial);
             updateAlertasDGII(empresas, secuenciales);
 
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Renderizar Gráficos con Chart.js */
     function updateCharts(data) {
-        const { empresas, suscripciones, pagos, apiKeys } = data;
+        const { empresas, planes, suscripciones, pagos, apiKeys } = data;
         const colors = getColors();
         const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
 
@@ -219,14 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
             options: commonOptions
         });
 
-        // 2. Suscripciones por Plan (Bar) - Agrupamiento mockeado (ideal plan.nombre)
+        // 2. Suscripciones por Plan (Bar)
         resetChart('chartPlanes');
+        const planMap = {};
+        planes.forEach(plan => { planMap[plan.id] = plan.nombre || 'Desconocido'; });
         const planesCount = {};
         suscripciones.forEach(s => {
-            const p = s.plan || 'Desconocido';
-            planesCount[p] = (planesCount[p] || 0) + 1;
+            const name = planMap[s.plan] || (s.plan || 'Desconocido');
+            planesCount[name] = (planesCount[name] || 0) + 1;
         });
-        
+
         charts.chartPlanes = new Chart(document.getElementById('chartPlanes'), {
             type: 'bar',
             data: {

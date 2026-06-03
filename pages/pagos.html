@@ -48,6 +48,14 @@
                             <option value="">Todas las empresas</option>
                         </select>
                     </div>
+                    <div style="flex: 1;">
+                        <select id="estadoFilter" class="form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="CONFIRMADO">Confirmado</option>
+                            <option value="RECHAZADO">Rechazado</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="tabs">
@@ -66,6 +74,7 @@
                                 <tr>
                                     <th>Empresa</th>
                                     <th>Plan</th>
+                                    <th>Tipo</th>
                                     <th>Monto</th>
                                     <th>Método</th>
                                     <th>Referencia</th>
@@ -245,10 +254,18 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label" for="tipo_pago">Tipo de Pago <span class="required">*</span></label>
+                        <select id="tipo_pago" class="form-select" required>
+                            <option value="RENOVACION" selected>Renovación</option>
+                            <option value="ADICIONAL">Adicional (Compra Extra)</option>
+                        </select>
+                    </div>
+
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label" for="monto">Monto <span class="required">*</span></label>
-                            <input type="number" id="monto" class="form-input" step="0.01" min="0.01" required>
+                            <label class="form-label" for="monto">Monto</label>
+                            <input type="number" id="monto" class="form-input" step="0.01" min="0.01" placeholder="Opcional (se calcula si aplica)">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="moneda">Moneda <span class="required">*</span></label>
@@ -261,8 +278,8 @@
 
                     <div class="form-grid-2">
                         <div class="form-group">
-                            <label class="form-label" for="metodo_pago">Método de Pago <span class="required">*</span></label>
-                            <select id="metodo_pago" class="form-select" required>
+                            <label class="form-label" for="metodo_pago">Método de Pago</label>
+                            <select id="metodo_pago" class="form-select">
                                 <option value="TRANSFERENCIA">Transferencia / Depósito</option>
                                 <option value="EFECTIVO">Efectivo</option>
                                 <option value="DEPOSITO">Depósito</option>
@@ -273,17 +290,9 @@
                         <div class="form-group">
                             <label class="form-label" for="referencia">Referencia</label>
                             <input type="text" id="referencia" class="form-input" placeholder="Nro de transacción">
-                        </div>
-                    </div>
-
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label class="form-label" for="fecha_pago">Fecha de Pago <span class="required">*</span></label>
-                            <input type="datetime-local" id="fecha_pago" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="fecha_corte">Día de Corte</label>
-                            <input type="number" id="fecha_corte" class="form-input" min="1" max="31" placeholder="Día del mes (1-31)">
+                            <p id="referenciaHelpCreate" style="font-size: 0.78rem; color: var(--warning); margin-top: 4px; display: none;">
+                                ⚠️ La referencia es obligatoria si el método no es Efectivo.
+                            </p>
                         </div>
                     </div>
 

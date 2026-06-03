@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Cliente - DerejFact Admin</title>
+    <script src="../js/config.js"></script>
+    <script src="/js/icono-global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside id="sidebar" class="sidebar"></aside>
+        <div class="main-wrapper">
+            <header id="topbar" class="topbar"></header>
+            <main class="main-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Nuevo Cliente</h1>
+                        <p class="page-subtitle">Onboarding guiado: registra la empresa y su primer usuario administrador en un solo flujo.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="wizard-steps" id="wizardSteps">
+                        <div class="wizard-step active" data-step="1">
+                            <span class="step-num"><span>1</span></span>
+                            <span>Empresa</span>
+                        </div>
+                        <div class="wizard-line"></div>
+                        <div class="wizard-step" data-step="2">
+                            <span class="step-num"><span>2</span></span>
+                            <span>Administrador</span>
+                        </div>
+                        <div class="wizard-line"></div>
+                        <div class="wizard-step" data-step="3">
+                            <span class="step-num"><span>3</span></span>
+                            <span>Listo</span>
+                        </div>
+                    </div>
+
+                    <form id="companyForm" class="wizard-panel active" novalidate>
+                        <h3 class="form-section-title">Datos de la empresa</h3>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="rnc">RNC<span class="required">*</span></label>
+                                <input type="text" id="rnc" name="rnc" class="form-input" placeholder="131793916" maxlength="11" inputmode="numeric" pattern="[0-9]*" required>
+                                <small class="form-hint">9 dígitos (RNC) u 11 dígitos (cédula).</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="nombre_comercial">Nombre Comercial<span class="required">*</span></label>
+                                <input type="text" id="nombre_comercial" name="nombre_comercial" class="form-input" placeholder="Demo POS" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="razon_social">Razón Social<span class="required">*</span></label>
+                                <input type="text" id="razon_social" name="razon_social" class="form-input" placeholder="Empresa Demo SRL" required>
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="ambiente">Ambiente<span class="required">*</span></label>
+                                <select id="ambiente" name="ambiente" class="form-select" required>
+                                    <option value="testecf">testecf — Pruebas</option>
+                                    <option value="certecf">certecf — Certificación</option>
+                                    <option value="production">production — Producción</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="estado">Estado<span class="required">*</span></label>
+                                <select id="estado" name="estado" class="form-select" required>
+                                    <option value="PENDIENTE_CERTIFICADO">PENDIENTE_CERTIFICADO</option>
+                                    <option value="ACTIVA">ACTIVA</option>
+                                    <option value="SUSPENDIDA">SUSPENDIDA</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-check">
+                                <input type="checkbox" id="activa" name="activa" checked>
+                                <label class="form-check-label" for="activa">Empresa activa</label>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer" style="padding-left:0; padding-right:0; border-top: 1px solid var(--border-subtle); margin-top: 8px;">
+                            <button type="button" class="btn btn-outline" id="btnCancel">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btnStep1">
+                                <span class="btn-text">Continuar →</span>
+                                <div class="spinner-inline hidden" id="spinnerStep1">
+                                    <svg class="spinner" viewBox="0 0 50 50">
+                                        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                                    </svg>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+
+                    <form id="userForm" class="wizard-panel" novalidate>
+                        <h3 class="form-section-title">Usuario administrador de la empresa</h3>
+                        <p class="form-hint" style="margin-bottom: 16px;">Este usuario tendrá el rol <b>ADMIN_EMPRESA</b> ligado a la empresa recién creada.</p>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="nombre">Nombre<span class="required">*</span></label>
+                                <input type="text" id="nombre" name="nombre" class="form-input" placeholder="Juan" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="apellido">Apellido<span class="required">*</span></label>
+                                <input type="text" id="apellido" name="apellido" class="form-input" placeholder="Pérez" required>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="userEmail">Correo<span class="required">*</span></label>
+                                <input type="email" id="userEmail" name="email" class="form-input" placeholder="admin@empresa.com" required autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="form-grid form-grid-2">
+                            <div class="form-group">
+                                <label class="form-label" for="password">Contraseña<span class="required">*</span></label>
+                                <input type="password" id="password" name="password" class="form-input" placeholder="Mínimo 8 caracteres" required minlength="8" autocomplete="new-password">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="password_confirm">Confirmar contraseña<span class="required">*</span></label>
+                                <input type="password" id="password_confirm" name="password_confirm" class="form-input" placeholder="Repite la contraseña" required minlength="8" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <div class="modal-footer" style="padding-left:0; padding-right:0; border-top: 1px solid var(--border-subtle); margin-top: 8px;">
+                            <button type="button" class="btn btn-outline" id="btnBack">← Atrás</button>
+                            <button type="submit" class="btn btn-primary" id="btnStep2">
+                                <span class="btn-text">Crear cliente</span>
+                                <div class="spinner-inline hidden" id="spinnerStep2">
+                                    <svg class="spinner" viewBox="0 0 50 50">
+                                        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                                    </svg>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="successPanel" class="wizard-panel">
+                        <div class="success-card">
+                            <div class="success-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            </div>
+                            <h2>¡Cliente creado!</h2>
+                            <p>La empresa y su usuario administrador están listos para usar.</p>
+                            <div class="summary" id="summaryBlock"></div>
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <a href="empresas.html" class="btn btn-outline">Ir a Empresas</a>
+                                <button type="button" class="btn btn-primary" id="btnCreateAnother">Crear otro</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/forms.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/pages/onboarding.js"></script>
+</body>
+</html>

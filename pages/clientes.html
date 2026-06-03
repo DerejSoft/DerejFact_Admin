@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - DerejFact Admin</title>
+    <script src="/js/icono-global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/layout.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/forms.js"></script>
+    <script src="../js/layout.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+        <div class="main-wrapper">
+            <header class="topbar" id="topbar"></header>
+            <main class="main-content" id="mainContent">
+                
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1 class="page-title">Clientes</h1>
+                        <p class="page-subtitle">Gestión de clientes registrados en el sistema</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="btnNew">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Nuevo Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por RNC/Cédula, nombre o correo...">
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-header-bar">
+                        <h3 class="table-title">Listado de Clientes <span class="table-count" id="tableCount">(0)</span></h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>RNC / Cédula</th>
+                                    <th>Nombre</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- Contenido dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal-overlay" id="modalForm">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Nuevo Cliente</h3>
+                <button class="modal-close" id="btnCloseModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataForm" class="form-grid" novalidate>
+                    <input type="hidden" id="entityId">
+
+                    <div class="form-group">
+                        <label class="form-label" for="rnc_cedula">RNC / Cédula <span class="required">*</span></label>
+                        <input type="text" id="rnc_cedula" name="rnc_cedula" class="form-input" required maxlength="11" placeholder="Ej. 00123456789">
+                        <small class="form-hint">9 dígitos (RNC Jurídico) u 11 dígitos (Cédula). Solo números.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" name="nombre" class="form-input" required placeholder="Nombre completo">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="correo">Correo</label>
+                        <input type="email" id="correo" name="correo" class="form-input" placeholder="cliente@ejemplo.com">
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" name="telefono" class="form-input" placeholder="8095551234">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="direccion">Dirección</label>
+                            <textarea id="direccion" name="direccion" class="form-textarea" rows="2" placeholder="Calle Principal 123"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="btnCancelModal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSaveModal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../js/pages/clientes.js"></script>
+</body>
+</html>

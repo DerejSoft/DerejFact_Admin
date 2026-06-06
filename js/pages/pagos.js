@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
                            </svg>
                            Descargar PDF
                        </button>`
-                    : `<span class="text-muted" style="font-size:0.75rem">Sin acciones</span>`);
+                    : `<span class="text-muted" style="font-size:0.75rem">Sin acciones</span>`;
 
             return `
             <tr>

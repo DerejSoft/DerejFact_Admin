@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelRechazar = document.getElementById('btnCancelRechazar');
     const btnSubmitRechazar = document.getElementById('btnSubmitRechazar');
 
+    // Modal PDF Options
+    const modalPdfOptions   = document.getElementById('modalPdfOptions');
+    const pdfPagoId         = document.getElementById('pdfPagoId');
+    const btnClosePdfModal  = document.getElementById('btnClosePdfModal');
+
     // Modal Crear (registro manual)
     const modalForm             = document.getElementById('modalForm');
     const btnNew                = document.getElementById('btnNew');
@@ -210,12 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? { badge: 'blue', label: 'Historial' }
                 : (ESTADO_CONFIG[item.estado] || { badge: 'gray', label: item.estado });
                 
-            const metodoBadge = isHistorial 
-                ? '<span class="text-muted" style="font-size:0.75rem">—</span>'
-                : (item.metodo_pago
-                    ? `<span class="badge badge-gray">${item.metodo_pago}</span>`
-                    : '<span class="text-muted" style="font-size:0.75rem">—</span>');
+            const metodoBadge = item.metodo_pago
+                ? `<span class="badge badge-gray">${item.metodo_pago}</span>`
+                : '<span class="text-muted" style="font-size:0.75rem">—</span>';
 
+            const showPdf = item.estado === 'CONFIRMADO' || isHistorial;
             const acciones = (item.estado === 'PENDIENTE')
                 ? `<div class="action-btns">
                        <button class="btn btn-sm btn-outline btn-confirmar"
@@ -229,11 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
                            ✕ Rechazar
                        </button>
                    </div>`
-                : (item.estado === 'CONFIRMADO'
-                    ? `<div class="action-btns">
-                           <button class="btn btn-sm btn-outline btn-pdf" data-id="${item.id}" data-format="a4">PDF A4</button>
-                           <button class="btn btn-sm btn-outline btn-pdf" data-id="${item.id}" data-format="80mm">PDF 80mm</button>
-                       </div>`
+                : showPdf
+                    ? `<button class="btn btn-sm btn-outline btn-pdf-options" data-id="${item.id}">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;">
+                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                           </svg>
+                           Descargar PDF
+                       </button>`
                     : `<span class="text-muted" style="font-size:0.75rem">Sin acciones</span>`);
 
             return `
@@ -267,11 +273,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        document.querySelectorAll('.btn-pdf').forEach(btn => {
+        document.querySelectorAll('.btn-pdf-options').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const pagoId = e.currentTarget.dataset.id;
-                const format = e.currentTarget.dataset.format;
-                downloadPagoPdf(pagoId, format, false);
+                pdfPagoId.value = e.currentTarget.dataset.id;
+                modalPdfOptions.classList.add('open');
             });
         });
     }
@@ -574,6 +579,27 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Error', err.message || 'No se pudo abrir el PDF', 'error');
         }
     }
+
+    // ── Modal: Opciones PDF ───────────────────────────────────────────────────
+    function closePdfModal() {
+        modalPdfOptions.classList.remove('open');
+        pdfPagoId.value = '';
+    }
+
+    btnClosePdfModal.addEventListener('click', closePdfModal);
+    modalPdfOptions.addEventListener('click', (e) => {
+        if (e.target === modalPdfOptions) closePdfModal();
+    });
+
+    document.querySelectorAll('.btn-pdf-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const pagoId = pdfPagoId.value;
+            const format = e.currentTarget.dataset.format;
+            if (!pagoId) return;
+            downloadPagoPdf(pagoId, format, true);
+            closePdfModal();
+        });
+    });
 
     // ── Eventos de filtrado ──────────────────────────────────────────────────
     searchInput.addEventListener('input', debounce(applyFiltersAndRender, 300));

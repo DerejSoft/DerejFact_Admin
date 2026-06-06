@@ -309,6 +309,40 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════
+         Modal: Opciones de PDF
+    ════════════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="modalPdfOptions">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Descargar Comprobante</h3>
+                <button class="modal-close" id="btnClosePdfModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <p style="margin-bottom:20px;color:var(--text-muted);font-size:0.9rem;">Seleccione el formato del comprobante de pago:</p>
+                <input type="hidden" id="pdfPagoId">
+                <div style="display:flex;gap:12px;justify-content:center;">
+                    <button class="btn btn-outline btn-pdf-option" data-format="a4" style="flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        <span>PDF A4</span>
+                    </button>
+                    <button class="btn btn-outline btn-pdf-option" data-format="80mm" style="flex:1;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>PDF 80mm</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/pages/pagos.js"></script>
 </body>
 </html>

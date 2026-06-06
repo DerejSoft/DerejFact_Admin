@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rolSelect = document.getElementById('rol');
     const empresaSelect = document.getElementById('empresa');
     const passwordInput = document.getElementById('password');
+    const passwordConfirmInput = document.getElementById('password_confirm');
 
     let allData = [];
     let empresasList = [];
@@ -124,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const passReq = document.getElementById('passRequired');
         const passHint = document.getElementById('passHint');
+        const passConfirmReq = document.getElementById('passConfirmRequired');
+        const passConfirmContainer = document.getElementById('passwordConfirmContainer');
         
         if (entity) {
             modalTitle.textContent = 'Editar Usuario';
@@ -135,15 +138,20 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('empresa').value = entity.empresa || '';
             document.getElementById('is_active').checked = entity.is_active;
             
-            // Password opcional en edición
             passwordInput.required = false;
+            passwordConfirmInput.required = false;
             passReq.style.display = 'none';
+            passConfirmReq.style.display = 'none';
             passHint.style.display = 'block';
+            passConfirmContainer.style.display = 'block';
         } else {
             modalTitle.textContent = 'Nuevo Usuario';
             passwordInput.required = true;
+            passwordConfirmInput.required = true;
             passReq.style.display = 'inline';
+            passConfirmReq.style.display = 'inline';
             passHint.style.display = 'none';
+            passConfirmContainer.style.display = 'block';
         }
         
         // Disparar evento change manual para habilitar/deshabilitar empresa
@@ -156,12 +164,43 @@ document.addEventListener('DOMContentLoaded', () => {
         modalForm.classList.remove('open');
     }
 
+    // --- VALIDACIÓN LOCAL ---
+    function _validateUserLocal(isEdit) {
+        FORMS.clearErrors(dataForm);
+        const errors = {};
+        const email = document.getElementById('email').value.trim();
+        if (!email)                       errors.email = ['El correo es obligatorio.'];
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                                          errors.email = ['Formato de correo inválido.'];
+        if (!document.getElementById('nombre').value.trim())
+                                          errors.nombre = ['El nombre es obligatorio.'];
+        if (!document.getElementById('apellido').value.trim())
+                                          errors.apellido = ['El apellido es obligatorio.'];
+        const pwd = passwordInput.value;
+        const pwdConfirm = passwordConfirmInput.value;
+        if (isEdit) {
+            if (pwd || pwdConfirm) {
+                if (!pwd)                 errors.password = ['La contraseña es obligatoria.'];
+                else if (pwd.length < 8)  errors.password = ['Mínimo 8 caracteres.'];
+                if (!pwdConfirm)          errors.password_confirm = ['Debes repetir la contraseña.'];
+                else if (pwd !== pwdConfirm)
+                                          errors.password_confirm = ['Las contraseñas no coinciden.'];
+            }
+        } else {
+            if (!pwd)                     errors.password = ['La contraseña es obligatoria.'];
+            else if (pwd.length < 8)      errors.password = ['Mínimo 8 caracteres.'];
+            if (!pwdConfirm)              errors.password_confirm = ['Debes repetir la contraseña.'];
+            else if (pwd !== pwdConfirm)  errors.password_confirm = ['Las contraseñas no coinciden.'];
+        }
+        const orphans = FORMS.apply(dataForm, errors);
+        if (orphans.length) showToast('Datos incompletos', orphans[0], 'warning');
+        return Object.keys(errors).length === 0;
+    }
+
     // --- GUARDAR (Crear / Editar) ---
     btnSaveModal.addEventListener('click', async () => {
-        if (!dataForm.checkValidity()) {
-            dataForm.reportValidity();
-            return;
-        }
+        const isEdit = !!document.getElementById('entityId').value;
+        if (!_validateUserLocal(isEdit)) return;
 
         const id = document.getElementById('entityId').value;
         const rol = document.getElementById('rol').value;

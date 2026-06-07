@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         border: getComputedStyle(document.documentElement).getPropertyValue('--border-subtle').trim()
     });
 
+    const METODO_CONFIG = {
+        TRANSFERENCIA: { label: 'Transferencia Bancaria', color: '#3b82f6' },
+        DEPOSITO:      { label: 'Depósito',               color: '#8b5cf6' },
+        EFECTIVO:      { label: 'Efectivo',               color: '#22c55e' },
+        CHEQUE:        { label: 'Cheque',                 color: '#f59e0b' },
+        OTRO:          { label: 'Otro',                   color: '#64748b' },
+    };
+
     /** Cargar todos los datos */
     async function loadDashboardData() {
         btnRefresh.disabled = true;
@@ -40,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiKeys,
                 pagosPendientes,
                 pagosHistorial,
+                pagosConfirmados,
                 secuenciales
             ] = await Promise.all([
                 API.get('/empresas/').catch(() => []),
@@ -50,17 +59,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 API.get('/api-keys/').catch(() => []),
                 API.get('/pagos/?estado=PENDIENTE').catch(() => []),
                 API.get('/pagos/historial/').catch(() => API.get('/pagos/?estado=CONFIRMADO').catch(() => [])),
+                API.get('/pagos/?estado=CONFIRMADO').catch(() => []),
                 API.get('/secuenciales/').catch(() => [])
             ]);
 
+            // Enriquecer historial con metodo_pago
+            const confirmedArr = Array.isArray(pagosConfirmados) ? pagosConfirmados : [];
+            const confirmedByKey = {};
+            confirmedArr.forEach(cp => {
+                if (cp.empresa && cp.plan && cp.monto) {
+                    const key = `${cp.empresa}|${cp.plan}|${cp.monto}`;
+                    confirmedByKey[key] = cp.metodo_pago;
+                }
+            });
+            const histArr = Array.isArray(pagosHistorial) ? pagosHistorial : [];
+            histArr.forEach(item => {
+                const isHist = item.periodo_mes !== undefined || item.monto_pagado !== undefined;
+                if (!isHist || item.metodo_pago) return;
+                let key;
+                if (item.empresa && item.plan && item.monto_pagado) {
+                    key = `${item.empresa}|${item.plan}|${item.monto_pagado}`;
+                    if (confirmedByKey[key]) { item.metodo_pago = confirmedByKey[key]; return; }
+                }
+                if (item.empresa_nombre && item.plan_nombre && item.monto_pagado) {
+                    const emp = (empresas || []).find(e => e.razon_social?.toLowerCase() === item.empresa_nombre.toLowerCase());
+                    const planName = (planes || []).find(p => p.nombre?.toLowerCase() === item.plan_nombre.toLowerCase());
+                    if (emp && planName) {
+                        key = `${emp.id}|${planName.id}|${item.monto_pagado}`;
+                        if (confirmedByKey[key]) { item.metodo_pago = confirmedByKey[key]; }
+                    }
+                }
+            });
+
             const pagosAll = [
                 ...(Array.isArray(pagosPendientes) ? pagosPendientes : []),
-                ...(Array.isArray(pagosHistorial) ? pagosHistorial : [])
+                ...histArr
             ];
 
             updateKPIs({ empresas, usuarios, planes, suscripciones, paquetes, apiKeys, pagosPendientes, secuenciales });
             updateCharts({ empresas, planes, suscripciones, pagos: pagosAll, apiKeys });
-            updateTables(empresas, pagosHistorial);
+            updateTables(empresas, histArr);
             updateAlertasDGII(empresas, secuenciales);
 
         } catch (error) {
@@ -132,19 +170,22 @@ document.addEventListener('DOMContentLoaded', () => {
             tbodyPagos.innerHTML = ultimosPagos.map(p => {
                 const isHistorial = p.periodo_mes !== undefined || p.monto_pagado !== undefined;
                 const monto = isHistorial ? p.monto_pagado : p.monto;
-                const metodo = p.metodo_pago || '—';
+                const metodoInfo = p.metodo_pago
+                    ? (METODO_CONFIG[p.metodo_pago] || { label: p.metodo_pago })
+                    : null;
+                const metodoLabel = metodoInfo ? metodoInfo.label : '—';
                 let badgeColor = 'gray';
-                let estadoLabel = p.estado || (isHistorial ? 'HISTORIAL' : 'PENDIENTE');
+                let estadoLabel = p.estado || (isHistorial ? 'Pagada' : 'PENDIENTE');
 
                 if (estadoLabel === 'CONFIRMADO') badgeColor = 'green';
                 else if (estadoLabel === 'RECHAZADO') badgeColor = 'red';
                 else if (estadoLabel === 'PENDIENTE') badgeColor = 'yellow';
-                else if (estadoLabel === 'HISTORIAL') badgeColor = 'blue';
+                else if (isHistorial) { badgeColor = 'blue'; estadoLabel = 'Pagada'; }
 
                 return `
                 <tr>
                     <td><strong>${fmtMoney(monto, p.moneda)}</strong></td>
-                    <td>${metodo}</td>
+                    <td>${metodoLabel}</td>
                     <td><span class="badge badge-${badgeColor}">${estadoLabel}</span></td>
                 </tr>
             `}).join('');
@@ -253,19 +294,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Métodos de Pago (Bar)
         resetChart('chartPagos');
         const metodosCount = {};
+        const metodoOrder = ['TRANSFERENCIA', 'DEPOSITO', 'EFECTIVO', 'CHEQUE', 'OTRO'];
         pagos.forEach(p => {
-            const m = p.metodo_pago || 'Otro';
-            metodosCount[m] = (metodosCount[m] || 0) + 1;
+            if (!p.metodo_pago) return;
+            metodosCount[p.metodo_pago] = (metodosCount[p.metodo_pago] || 0) + 1;
         });
+        const sortedMetodos = metodoOrder.filter(m => metodosCount[m]);
 
         charts.chartPagos = new Chart(document.getElementById('chartPagos'), {
             type: 'bar',
             data: {
-                labels: Object.keys(metodosCount),
+                labels: sortedMetodos.map(m => METODO_CONFIG[m]?.label || m),
                 datasets: [{
                     label: 'Pagos',
-                    data: Object.values(metodosCount),
-                    backgroundColor: colors.info,
+                    data: sortedMetodos.map(m => metodosCount[m]),
+                    backgroundColor: sortedMetodos.map(m => METODO_CONFIG[m]?.color || colors.surface2),
                     borderRadius: 4
                 }]
             },

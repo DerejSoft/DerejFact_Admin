@@ -249,11 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Campos dependiendo si es un Pago o un Historial
             const monto      = isHistorial ? item.monto_pagado : item.monto;
             const moneda     = item.moneda || 'DOP'; // Historial might not have moneda
-            const fechaStr   = isHistorial ? `${item.periodo_mes}/${item.periodo_ano}` : fmtDate(item.fecha_pago);
+            const fechaStr   = isHistorial
+                ? (item.periodo_mes && item.periodo_ano
+                    ? fmtDate(`${item.periodo_ano}-${String(item.periodo_mes).padStart(2, '0')}-01`)
+                    : '—')
+                : fmtDate(item.fecha_pago);
             const refStr     = isHistorial ? `Comp: ${item.comprobantes_asignados}` : (item.referencia || '<span class="text-muted">—</span>');
             
             const estadoObj  = isHistorial 
-                ? { badge: 'blue', label: 'Historial' }
+                ? { badge: 'green', label: 'Pagada' }
                 : (ESTADO_CONFIG[item.estado] || { badge: 'gray', label: item.estado });
                 
             const metodoInfo = item.metodo_pago

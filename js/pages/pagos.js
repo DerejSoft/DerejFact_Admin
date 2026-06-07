@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
         RECHAZADO:  { badge: 'red',    label: 'Rechazado'  },
     };
 
+    const METODO_CONFIG = {
+        TRANSFERENCIA: { label: 'Transferencia Bancaria', icon: 'fas fa-university' },
+        DEPOSITO:      { label: 'Depósito',               icon: 'fas fa-building-columns' },
+        EFECTIVO:      { label: 'Efectivo',               icon: 'fas fa-money-bill-wave' },
+        CHEQUE:        { label: 'Cheque',                 icon: 'fas fa-money-check' },
+        OTRO:          { label: 'Otro',                   icon: 'fas fa-credit-card' },
+    };
+
     // ── Helpers ──────────────────────────────────────────────────────────────
     function fmtMoney(monto, moneda = 'DOP') {
         const n = parseFloat(monto);
@@ -215,8 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? { badge: 'blue', label: 'Historial' }
                 : (ESTADO_CONFIG[item.estado] || { badge: 'gray', label: item.estado });
                 
-            const metodoBadge = item.metodo_pago
-                ? `<span class="badge badge-gray">${item.metodo_pago}</span>`
+            const metodoInfo = item.metodo_pago
+                ? (METODO_CONFIG[item.metodo_pago] || { label: item.metodo_pago })
+                : null;
+            const metodoBadge = metodoInfo
+                ? `<span class="badge badge-gray" title="${metodoInfo.label}"><i class="${metodoInfo.icon}" style="margin-right:4px;font-size:11px;"></i>${metodoInfo.label}</span>`
                 : '<span class="text-muted" style="font-size:0.75rem">—</span>';
 
             const showPdf = item.estado === 'CONFIRMADO' || isHistorial;

@@ -268,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '<span class="text-muted" style="font-size:0.75rem">—</span>';
 
             const showPdf = item.estado === 'CONFIRMADO' || isHistorial;
+            const pagoIdForPdf = isHistorial ? (item.pago || item.id) : item.id;
             const acciones = (item.estado === 'PENDIENTE')
                 ? `<div class="action-btns">
                        <button class="btn btn-sm btn-outline btn-confirmar"
@@ -282,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                        </button>
                    </div>`
                 : showPdf
-                    ? `<button class="btn btn-sm btn-outline btn-pdf-options" data-id="${item.id}" title="Descargar PDF">
+                    ? `<button class="btn btn-sm btn-outline btn-pdf-options" data-id="${pagoIdForPdf}" title="Descargar PDF">
                             <i class="fas fa-file-pdf"></i>
                         </button>`
                     : `<span class="text-muted" style="font-size:0.75rem">Sin acciones</span>`;

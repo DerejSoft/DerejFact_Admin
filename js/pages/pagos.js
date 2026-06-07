@@ -127,17 +127,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            const [pagosRes, empRes, subsRes, planesRes] = await Promise.all([
+            const [pagosRes, empRes, subsRes, planesRes, confirmedRes] = await Promise.all([
                 pagosPromise,
                 API.get('/empresas/'),
                 API.get('/suscripciones/'),
-                API.get('/planes/')
+                API.get('/planes/'),
+                API.get('/pagos/?estado=CONFIRMADO').catch(() => [])
             ]);
 
             allData       = Array.isArray(pagosRes) ? pagosRes : [];
             empresasList  = Array.isArray(empRes) ? empRes : [];
             suscripcionesList = Array.isArray(subsRes) ? subsRes : [];
             planesList    = Array.isArray(planesRes) ? planesRes : [];
+
+            // Enriquecer registros de historial con metodo_pago
+            const confirmedArr = Array.isArray(confirmedRes) ? confirmedRes : [];
+            const confirmedByKey = {};
+            confirmedArr.forEach(cp => {
+                if (cp.empresa && cp.plan && cp.monto) {
+                    const key = `${cp.empresa}|${cp.plan}|${cp.monto}`;
+                    confirmedByKey[key] = cp.metodo_pago;
+                }
+            });
+            const empresaByName = {};
+            empresasList.forEach(e => { empresaByName[e.razon_social.toLowerCase()] = e.id; });
+            const planByName = {};
+            planesList.forEach(p => { planByName[p.nombre.toLowerCase()] = p.id; });
+            allData.forEach(item => {
+                const isHist = item.periodo_mes !== undefined || item.monto_pagado !== undefined;
+                if (!isHist || item.metodo_pago) return;
+                let key;
+                if (item.empresa && item.plan && item.monto_pagado) {
+                    key = `${item.empresa}|${item.plan}|${item.monto_pagado}`;
+                    if (confirmedByKey[key]) { item.metodo_pago = confirmedByKey[key]; return; }
+                }
+                if (item.empresa_nombre && item.plan_nombre && item.monto_pagado) {
+                    const empId = empresaByName[item.empresa_nombre.toLowerCase()];
+                    const planId = planByName[item.plan_nombre.toLowerCase()];
+                    if (empId && planId) {
+                        key = `${empId}|${planId}|${item.monto_pagado}`;
+                        if (confirmedByKey[key]) { item.metodo_pago = confirmedByKey[key]; }
+                    }
+                }
+            });
 
             // Poblar filtro de empresa
             empresaFilter.innerHTML = `<option value="">Todas las empresas</option>` +
